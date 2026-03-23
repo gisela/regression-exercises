@@ -5,49 +5,61 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Regressionsövningar — Kvantitativ metodik</title>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; max-width: 700px; margin: 60px auto; padding: 0 20px; color: #333; }
+    body { font-family: system-ui, -apple-system, sans-serif; max-width: 720px; margin: 60px auto; padding: 0 20px; color: #333; }
     h1 { font-size: 1.6em; }
-    h3 { margin-top: 32px; color: #555; font-size: 1em; text-transform: uppercase; letter-spacing: 0.05em; }
-    p { line-height: 1.6; color: #555; }
-    a.card { display: block; padding: 20px; margin: 16px 0; border: 1px solid #ddd; border-radius: 8px; text-decoration: none; color: #333; transition: box-shadow 0.2s; }
+    h3 { margin-top: 36px; color: #555; font-size: 0.95em; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #eee; padding-bottom: 6px; }
+    p.intro { line-height: 1.6; color: #555; }
+    a.card { display: block; padding: 18px 20px; margin: 12px 0; border: 1px solid #ddd; border-radius: 8px; text-decoration: none; color: #333; transition: box-shadow 0.2s; }
     a.card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-    a.card h2 { margin: 0 0 6px 0; font-size: 1.2em; color: #2A6496; }
-    a.card p { margin: 0; font-size: 0.95em; }
-    .tag { display: inline-block; font-size: 0.75em; padding: 2px 8px; border-radius: 4px; margin-right: 6px; }
+    a.card h2 { margin: 0 0 6px 0; font-size: 1.15em; color: #2A6496; }
+    a.card p { margin: 0; font-size: 0.92em; color: #555; }
+    .tag { display: inline-block; font-size: 0.7em; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-right: 6px; vertical-align: middle; }
     .tag-exercise { background: #e8f4e8; color: #2d7d2d; }
     .tag-dataset { background: #e8eef4; color: #2A6496; }
     .tag-demo { background: #f4e8f4; color: #7d2d7d; }
-    footer { margin-top: 40px; font-size: 0.85em; color: #999; }
+    footer { margin-top: 48px; font-size: 0.85em; color: #999; }
   </style>
 </head>
 <body>
   <h1>Regressionsövningar</h1>
-  <p>Interaktiva övningar i multipel regression för kursen Kvantitativ metodik, Försvarshögskolan.</p>
+  <p class="intro">Interaktiva övningar i multipel regression för kursen Kvantitativ metodik, Försvarshögskolan. Alla filer körs direkt i webbläsaren — inget behöver installeras.</p>
 
-  <h3>Interaktiva övningar</h3>
+  <h3>Pedagogisk genomgång (föreläsning)</h3>
+
+  <a class="card" href="cadet_performance_regression.html">
+    <h2><span class="tag tag-demo">Genomgång</span> Vad gör en bra kadett?</h2>
+    <p>Personlighet, self-efficacy och instruktörsbedömd prestation hos 240 militärkadetter. Forest plots, modelljämförelse akademisk vs militär. Bekesiene et al. (2023).</p>
+  </a>
+
+  <h3>Hemuppgift — Dataset med analysguide</h3>
+
+  <a class="card" href="ambush_leadership_regression.html">
+    <h2><span class="tag tag-exercise">Övning</span> Ledarskap under press</h2>
+    <p>Multipel regression av beslutsfattande i simulerat bakhåll. Skalkonstruktion (SE-items), VIF, modelldiagnostik. N=283. Mattingsdal (2025).</p>
+  </a>
 
   <a class="card" href="team_efficacy_regression.html">
     <h2><span class="tag tag-exercise">Övning</span> Vad gör ett team effektivt?</h2>
-    <p>Regressionsanalys av collective efficacy, teamprocesser och teameffektivitet. N=160 team. Baserat på Elms, Gill &amp; Gonzalez-Morales (2022).</p>
+    <p>Collective efficacy, teamprocesser och teameffektivitet. Multikollinearitet, standardiserade koefficienter. N=160 team. Elms et al. (2022).</p>
   </a>
 
-  <a class="card" href="ambush_leadership_regression.html">
-    <h2><span class="tag tag-demo">Genomgång</span> Ledarskap under press</h2>
-    <p>Multipel regressionsanalys av militärt beslutsfattande i simulerat bakhåll. N=283 individer. Baserat på Mattingsdal (2025).</p>
+  <h3>Hemuppgift — Datasetbeskrivningar (utan analysguide)</h3>
+
+  <a class="card" href="ambush_leadership.html">
+    <h2><span class="tag tag-dataset">Dataset</span> Ledarskap under press</h2>
+    <p>Dokumentation av variabler, items och kodning. N=283 individer, 15 kolumner inkl. SE-items.</p>
   </a>
 
-  <a class="card" href="cadet_performance_regression.html">
-    <h2><span class="tag tag-exercise">Övning</span> Vad gör en bra kadett?</h2>
-    <p>Personlighet, self-efficacy och instruktörsbedömd prestation hos militärkadetter. Forest plots, modelljämförelser. N=240. Baserat på Bekesiene et al. (2023).</p>
+  <a class="card" href="team_efficacy.html">
+    <h2><span class="tag tag-dataset">Dataset</span> Teameffektivitet</h2>
+    <p>Dokumentation av variabler och kodning. N=160 team, 9 kolumner, teamnivådata.</p>
   </a>
-
-  <h3>Datasetbeskrivningar</h3>
 
   <a class="card" href="cadet_performance.html">
     <h2><span class="tag tag-dataset">Dataset</span> Kadettprestation och personlighet</h2>
-    <p>Kort beskrivning av datasetet, variablerna och urvalet — utan analysguide. För lärare och som referens.</p>
+    <p>Dokumentation av variabler och kodning. N=240 kadetter, 12 kolumner, Big Five + self-efficacy.</p>
   </a>
 
-  <footer>Gisela Bäcklander, ILL, Försvarshögskolan</footer>
+  <footer>Gisela Bäcklander, ILL, Försvarshögskolan — 2025</footer>
 </body>
 </html>
