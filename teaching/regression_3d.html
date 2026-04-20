@@ -1,7 +1,215 @@
-<html>
-<head><meta charset="utf-8" /></head>
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<title>Multipel regression i 3D</title>
+<script src="https://cdn.plot.ly/plotly-3.5.0.min.js"></script>
+<style>
+  body { font-family: system-ui, -apple-system, sans-serif; max-width: 900px; margin: 20px auto; padding: 0 20px; color: #333; }
+  h1 { font-size: 1.4em; margin-bottom: 4px; }
+  p.sub { color: #666; margin-top: 0; font-size: 0.95em; }
+  .controls { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
+  button { font: inherit; padding: 10px 16px; border: 1px solid #ccc; border-radius: 6px; background: white; cursor: pointer; transition: all 0.15s; }
+  button:hover { border-color: #2A6496; color: #2A6496; }
+  button.active { background: #2A6496; border-color: #2A6496; color: white; font-weight: 600; }
+  .stats { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 12px 16px; margin: 12px 0; font-family: "SF Mono", Consolas, monospace; font-size: 0.9em; }
+  .stats strong { color: #2A6496; }
+  .stats .eq { font-size: 1.05em; margin-bottom: 6px; }
+  #plot { width: 100%; height: 600px; }
+  .note { font-size: 0.85em; color: #888; margin-top: 8px; }
+</style>
+</head>
 <body>
-    <div>                        <script>window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
-        <script charset="utf-8" src="https://cdn.plot.ly/plotly-3.5.0.min.js" integrity="sha256-fHbNLP+GlIXN+efbQec78UkemUz3NJp7UmfGxC1tNxs=" crossorigin="anonymous"></script>                <div id="7d2cf477-d01b-4a55-bc82-e6effb1eaa19" class="plotly-graph-div" style="height:600px; width:800px;"></div>            <script>                window.PLOTLYENV=window.PLOTLYENV || {};                                if (document.getElementById("7d2cf477-d01b-4a55-bc82-e6effb1eaa19")) {                    Plotly.newPlot(                        "7d2cf477-d01b-4a55-bc82-e6effb1eaa19",                        [{"colorscale":[[0,"#3498db"],[1,"#2c3e50"]],"hovertemplate":"Prediktor 1: %{x:.1f}\u003cbr\u003ePrediktor 2: %{y:.1f}\u003cbr\u003e\u0176: %{z:.1f}\u003cextra\u003eRegressionsplan\u003c\u002fextra\u003e","name":"Regressionsplan","opacity":0.35,"showscale":false,"x":{"dtype":"f8","bdata":"AAAAAAAA8D+8hvIaymv4P7yG8hrKawBAG8prKK+hBEB5DeU1lNcIQNdQXkN5DQ1AG8prKK+hEEDKayivobwSQHkN5TWU1xRAKK+hvIbyFkDXUF5DeQ0ZQIbyGsprKBtANpTXUF5DHUDlNZTXUF4fQMprKK+hvCBAoryG8hrKIUB5DeU1lNciQFFeQ3kN5SNAKK+hvIbyJEAAAAAAAAAmQAAAAAAAAPA\u002fvIbyGspr+D+8hvIaymsAQBvKayivoQRAeQ3lNZTXCEDXUF5DeQ0NQBvKayivoRBAymsor6G8EkB5DeU1lNcUQCivobyG8hZA11BeQ3kNGUCG8hrKaygbQDaU11BeQx1A5TWU11BeH0DKayivobwgQKK8hvIayiFAeQ3lNZTXIkBRXkN5DeUjQCivobyG8iRAAAAAAAAAJkAAAAAAAADwP7yG8hrKa\u002fg\u002fvIbyGsprAEAbymsor6EEQHkN5TWU1whA11BeQ3kNDUAbymsor6EQQMprKK+hvBJAeQ3lNZTXFEAor6G8hvIWQNdQXkN5DRlAhvIaymsoG0A2lNdQXkMdQOU1lNdQXh9Aymsor6G8IECivIbyGsohQHkN5TWU1yJAUV5DeQ3lI0Aor6G8hvIkQAAAAAAAACZAAAAAAAAA8D+8hvIaymv4P7yG8hrKawBAG8prKK+hBEB5DeU1lNcIQNdQXkN5DQ1AG8prKK+hEEDKayivobwSQHkN5TWU1xRAKK+hvIbyFkDXUF5DeQ0ZQIbyGsprKBtANpTXUF5DHUDlNZTXUF4fQMprKK+hvCBAoryG8hrKIUB5DeU1lNciQFFeQ3kN5SNAKK+hvIbyJEAAAAAAAAAmQAAAAAAAAPA\u002fvIbyGspr+D+8hvIaymsAQBvKayivoQRAeQ3lNZTXCEDXUF5DeQ0NQBvKayivoRBAymsor6G8EkB5DeU1lNcUQCivobyG8hZA11BeQ3kNGUCG8hrKaygbQDaU11BeQx1A5TWU11BeH0DKayivobwgQKK8hvIayiFAeQ3lNZTXIkBRXkN5DeUjQCivobyG8iRAAAAAAAAAJkAAAAAAAADwP7yG8hrKa\u002fg\u002fvIbyGsprAEAbymsor6EEQHkN5TWU1whA11BeQ3kNDUAbymsor6EQQMprKK+hvBJAeQ3lNZTXFEAor6G8hvIWQNdQXkN5DRlAhvIaymsoG0A2lNdQXkMdQOU1lNdQXh9Aymsor6G8IECivIbyGsohQHkN5TWU1yJAUV5DeQ3lI0Aor6G8hvIkQAAAAAAAACZAAAAAAAAA8D+8hvIaymv4P7yG8hrKawBAG8prKK+hBEB5DeU1lNcIQNdQXkN5DQ1AG8prKK+hEEDKayivobwSQHkN5TWU1xRAKK+hvIbyFkDXUF5DeQ0ZQIbyGsprKBtANpTXUF5DHUDlNZTXUF4fQMprKK+hvCBAoryG8hrKIUB5DeU1lNciQFFeQ3kN5SNAKK+hvIbyJEAAAAAAAAAmQAAAAAAAAPA\u002fvIbyGspr+D+8hvIaymsAQBvKayivoQRAeQ3lNZTXCEDXUF5DeQ0NQBvKayivoRBAymsor6G8EkB5DeU1lNcUQCivobyG8hZA11BeQ3kNGUCG8hrKaygbQDaU11BeQx1A5TWU11BeH0DKayivobwgQKK8hvIayiFAeQ3lNZTXIkBRXkN5DeUjQCivobyG8iRAAAAAAAAAJkAAAAAAAADwP7yG8hrKa\u002fg\u002fvIbyGsprAEAbymsor6EEQHkN5TWU1whA11BeQ3kNDUAbymsor6EQQMprKK+hvBJAeQ3lNZTXFEAor6G8hvIWQNdQXkN5DRlAhvIaymsoG0A2lNdQXkMdQOU1lNdQXh9Aymsor6G8IECivIbyGsohQHkN5TWU1yJAUV5DeQ3lI0Aor6G8hvIkQAAAAAAAACZAAAAAAAAA8D+8hvIaymv4P7yG8hrKawBAG8prKK+hBEB5DeU1lNcIQNdQXkN5DQ1AG8prKK+hEEDKayivobwSQHkN5TWU1xRAKK+hvIbyFkDXUF5DeQ0ZQIbyGsprKBtANpTXUF5DHUDlNZTXUF4fQMprKK+hvCBAoryG8hrKIUB5DeU1lNciQFFeQ3kN5SNAKK+hvIbyJEAAAAAAAAAmQAAAAAAAAPA\u002fvIbyGspr+D+8hvIaymsAQBvKayivoQRAeQ3lNZTXCEDXUF5DeQ0NQBvKayivoRBAymsor6G8EkB5DeU1lNcUQCivobyG8hZA11BeQ3kNGUCG8hrKaygbQDaU11BeQx1A5TWU11BeH0DKayivobwgQKK8hvIayiFAeQ3lNZTXIkBRXkN5DeUjQCivobyG8iRAAAAAAAAAJkAAAAAAAADwP7yG8hrKa\u002fg\u002fvIbyGsprAEAbymsor6EEQHkN5TWU1whA11BeQ3kNDUAbymsor6EQQMprKK+hvBJAeQ3lNZTXFEAor6G8hvIWQNdQXkN5DRlAhvIaymsoG0A2lNdQXkMdQOU1lNdQXh9Aymsor6G8IECivIbyGsohQHkN5TWU1yJAUV5DeQ3lI0Aor6G8hvIkQAAAAAAAACZAAAAAAAAA8D+8hvIaymv4P7yG8hrKawBAG8prKK+hBEB5DeU1lNcIQNdQXkN5DQ1AG8prKK+hEEDKayivobwSQHkN5TWU1xRAKK+hvIbyFkDXUF5DeQ0ZQIbyGsprKBtANpTXUF5DHUDlNZTXUF4fQMprKK+hvCBAoryG8hrKIUB5DeU1lNciQFFeQ3kN5SNAKK+hvIbyJEAAAAAAAAAmQAAAAAAAAPA\u002fvIbyGspr+D+8hvIaymsAQBvKayivoQRAeQ3lNZTXCEDXUF5DeQ0NQBvKayivoRBAymsor6G8EkB5DeU1lNcUQCivobyG8hZA11BeQ3kNGUCG8hrKaygbQDaU11BeQx1A5TWU11BeH0DKayivobwgQKK8hvIayiFAeQ3lNZTXIkBRXkN5DeUjQCivobyG8iRAAAAAAAAAJkAAAAAAAADwP7yG8hrKa\u002fg\u002fvIbyGsprAEAbymsor6EEQHkN5TWU1whA11BeQ3kNDUAbymsor6EQQMprKK+hvBJAeQ3lNZTXFEAor6G8hvIWQNdQXkN5DRlAhvIaymsoG0A2lNdQXkMdQOU1lNdQXh9Aymsor6G8IECivIbyGsohQHkN5TWU1yJAUV5DeQ3lI0Aor6G8hvIkQAAAAAAAACZAAAAAAAAA8D+8hvIaymv4P7yG8hrKawBAG8prKK+hBEB5DeU1lNcIQNdQXkN5DQ1AG8prKK+hEEDKayivobwSQHkN5TWU1xRAKK+hvIbyFkDXUF5DeQ0ZQIbyGsprKBtANpTXUF5DHUDlNZTXUF4fQMprKK+hvCBAoryG8hrKIUB5DeU1lNciQFFeQ3kN5SNAKK+hvIbyJEAAAAAAAAAmQAAAAAAAAPA\u002fvIbyGspr+D+8hvIaymsAQBvKayivoQRAeQ3lNZTXCEDXUF5DeQ0NQBvKayivoRBAymsor6G8EkB5DeU1lNcUQCivobyG8hZA11BeQ3kNGUCG8hrKaygbQDaU11BeQx1A5TWU11BeH0DKayivobwgQKK8hvIayiFAeQ3lNZTXIkBRXkN5DeUjQCivobyG8iRAAAAAAAAAJkAAAAAAAADwP7yG8hrKa\u002fg\u002fvIbyGsprAEAbymsor6EEQHkN5TWU1whA11BeQ3kNDUAbymsor6EQQMprKK+hvBJAeQ3lNZTXFEAor6G8hvIWQNdQXkN5DRlAhvIaymsoG0A2lNdQXkMdQOU1lNdQXh9Aymsor6G8IECivIbyGsohQHkN5TWU1yJAUV5DeQ3lI0Aor6G8hvIkQAAAAAAAACZAAAAAAAAA8D+8hvIaymv4P7yG8hrKawBAG8prKK+hBEB5DeU1lNcIQNdQXkN5DQ1AG8prKK+hEEDKayivobwSQHkN5TWU1xRAKK+hvIbyFkDXUF5DeQ0ZQIbyGsprKBtANpTXUF5DHUDlNZTXUF4fQMprKK+hvCBAoryG8hrKIUB5DeU1lNciQFFeQ3kN5SNAKK+hvIbyJEAAAAAAAAAmQAAAAAAAAPA\u002fvIbyGspr+D+8hvIaymsAQBvKayivoQRAeQ3lNZTXCEDXUF5DeQ0NQBvKayivoRBAymsor6G8EkB5DeU1lNcUQCivobyG8hZA11BeQ3kNGUCG8hrKaygbQDaU11BeQx1A5TWU11BeH0DKayivobwgQKK8hvIayiFAeQ3lNZTXIkBRXkN5DeUjQCivobyG8iRAAAAAAAAAJkA=","shape":"20, 20"},"y":{"dtype":"f8","bdata":"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","shape":"20, 20"},"z":{"dtype":"f8","bdata":"vjYdh+EYDkCzkoi0voMQQAaKgqUM+xFAWoF8llpyE0CueHaHqOkUQAFwcHj2YBZAVWdqaUTYF0CpXmRakk8ZQP1VXkvgxhpAUU1YPC4+HEClRFItfLUdQPc7TB7KLB9ApxmjBwxSIEBQFSAAsw0hQPoQnfhZySFApAwa8QCFIkBOCJfpp0AjQPgDFOJO\u002fCNAov+Q2vW3JEBM+w3TnHMlQMCqL9wmwA5As8wRX2HXEEAHxAtQr04SQFu7BUH9xRNAr7L\u002fMUs9FUACqvkimbQWQFah8xPnKxhAqpjtBDWjGUD+j+f1ghobQFKH4ebQkRxApn7b1x4JHkD4ddXIbIAfQKe251zdeyBAULJkVYQ3IUD6reFNK\u002fMhQKSpXkbSriJATqXbPnlqI0D4oFg3ICYkQKKc1S\u002fH4SRATJhSKG6dJUDBHkIxbGcPQLQGmwkEKxFACP6U+lGiEkBc9Y7rnxkUQLDsiNztkBVAAuSCzTsIF0BW23y+iX8YQKrSdq\u002fX9hlA\u002fslwoCVuG0BSwWqRc+UcQKa4ZILBXB5A+K9ecw\u002fUH0CnUyyyrqUgQFBPqapVYSFA+komo\u002fwcIkCkRqObo9giQE5CIJRKlCNA+D2djPFPJECiORqFmAslQEw1l30\u002fxyVAYUkqw1gHEEC1QCS0pn4RQAg4HqX09RJAXC8YlkJtFECwJhKHkOQVQAMeDHjeWxdAVxUGaSzTGECrDABaekoaQP8D+krIwRtAU\u002fvzOxY5HUCn8u0sZLAeQP308w7ZEyBAqPBwB4DPIEBR7O3\u002fJoshQPvnavjNRiJApePn8HQCI0BP32TpG74jQPna4eHCeSRAo9Ze2mk1JUBN0tvSEPElQGKDs237WhBAtXqtXknSEUAJcqdPl0kTQF1poUDlwBRAsWCbMTM4FkAEWJUiga8XQFhPjxPPJhlArEaJBB2eGkAAPoP1ahUcQFQ1fea4jB1AqCx31wYEH0D9kThkqj0gQKiNtVxR+SBAUYkyVfi0IUD7hK9Nn3AiQKWALEZGLCNAT3ypPu3nI0D5dyY3lKMkQKNzoy87XyVATW8gKOIaJkBivTwYnq4QQLa0NgnsJRJACaww+jmdE0BdoyrrhxQVQLGaJNzVixZABJIezSMDGEBYiRi+cXoZQKyAEq+\u002f8RpAAHgMoA1pHEBUbwaRW+AdQKhmAIKpVx9A\u002fS59uXtnIECoKvqxIiMhQFEmd6rJ3iFA+yH0onCaIkClHXGbF1YjQE8Z7pO+ESRA+RRrjGXNJECjEOiEDIklQE0MZX2zRCZAY\u002ffFwkACEUC37r+zjnkSQArmuaTc8BNAXt2zlSpoFUCy1K2GeN8WQAXMp3fGVhhAWcOhaBTOGUCtuptZYkUbQAGylUqwvBxAVamPO\u002f4zHkCpoIksTKsfQP7LwQ5NkSBAqcc+B\u002fRMIUBSw7v\u002fmggiQPy+OPhBxCJAprq18Oh\u002fI0BQtjLpjzskQPqxr+E29yRApK0s2t2yJUBOqanShG4mQGQxT23jVRFAuChJXjHNEkALIENPf0QUQF8XPUDNuxVAsw43MRszF0AGBjEiaaoYQFr9KhO3IRpArvQkBAWZG0AC7B71UhAdQFbjGOaghx5AqtoS1+7+H0D+aAZkHrsgQKlkg1zFdiFAUmAAVWwyIkD8W31NE+4iQKZX+kW6qSNAUFN3PmFlJED6TvQ2CCElQKRKcS+v3CVATkbuJ1aYJkBka9gXhqkRQLhi0gjUIBNADFrM+SGYFEBgUcbqbw8WQLRIwNu9hhdABkC6zAv+GEBaN7S9WXUaQK4urq6n7BtAAiaon\u002fVjHUBWHaKQQ9seQFUKzsBIKSBA\u002fgVLue\u002fkIECpAcixlqAhQFL9RKo9XCJA\u002fPjBouQXI0Cm9D6bi9MjQFDwu5MyjyRA+us4jNlKJUCk57WEgAYmQE7jMn0nwiZAZaVhwij9EUC4nFuzdnQTQAyUVaTE6xRAYItPlRJjFkC0gkmGYNoXQAd6Q3euURlAW3E9aPzIGkCvaDdZSkAcQANgMUqYtx1AV1crO+YuH0BWpxIWGlMgQP6ijw7BDiFAqp4MB2jKIUBSmon\u002fDoYiQPyVBvi1QSNAppGD8Fz9I0BQjQDpA7kkQPqIfeGqdCVApIT62VEwJkBOgHfS+OsmQGbf6mzLUBJAudbkXRnIE0ANzt5OZz8VQGHF2D+1thZAtbzSMAMuGEAItMwhUaUZQFyrxhKfHBtAsKLAA+2THEAEmrr0OgseQFiRtOWIgh9AVkRXa+t8IED\u002fP9RjkjghQKo7UVw59CFAUzfOVOCvIkD9MktNh2sjQKcuyEUuJyRAUSpFPtXiJED7JcI2fJ4lQKUhPy8jWiZATx28J8oVJ0BmGXQXbqQSQLoQbgi8GxRADgho+QmTFUBi\u002f2HqVwoXQLb2W9ulgRhACO5VzPP4GUBc5U+9QXAbQLDcSa6P5xxABNRDn91eHkBYyz2QK9YfQFbhm8C8piBA\u002f9wYuWNiIUCq2JWxCh4iQFPUEqqx2SJA\u002fc+PoliVI0Cnywyb\u002f1AkQFHHiZOmDCVA+8IGjE3IJUClvoOE9IMmQE+6AH2bPydAZ1P9wRD4EkC7SveyXm8UQA5C8aOs5hVAYjnrlPpdF0C2MOWFSNUYQAko33aWTBpAXR\u002fZZ+TDG0CxFtNYMjsdQAUOzUmAsh5ArYJjHecUIEBXfuAVjtAgQAB6XQ41jCFAq3XaBtxHIkBUcVf\u002fggMjQP5s1PcpvyNAqGhR8NB6JEBSZM7odzYlQPxfS+Ee8iVAplvI2cWtJkBQV0XSbGknQGiNhmyzSxNAu4SAXQHDFEAPfHpOTzoWQGNzdD+dsRdAt2puMOsoGUAKYmghOaAaQF5ZYhKHFxxAslBcA9WOHUAGSFb0IgYfQK0fqHK4PiBAVxsla1\u002f6IEAAF6JjBrYhQKsSH1ytcSJAVA6cVFQtI0D+CRlN++gjQKgFlkWipCRAUgETPklgJUD8\u002fI828BsmQKb4DC+X1yZAUPSJJz6TJ0Boxw8XVp8TQLy+CQikFhVAELYD+fGNFkBkrf3pPwUYQLik99qNfBlACpzxy9vzGkBek+u8KWscQLKK5a134h1ABoLfnsVZH0CtvOzHiWggQFe4acAwJCFAALTmuNffIUCrr2OxfpsiQFSr4KklVyNA\u002fqZdoswSJECootqac84kQFKeV5MaiiVA\u002fJnUi8FFJkCmlVGEaAEnQFCRznwPvSdAaQGZwfjyE0C9+JKyRmoVQBDwjKOU4RZAZOeGlOJYGEC43oCFMNAZQAvWenZ+RxtAX810Z8y+HECzxG5YGjYeQAe8aElorR9ArlkxHVuSIEBYVa4VAk4hQAFRKw6pCSJArEyoBlDFIkBVSCX\u002f9oAjQP9DovedPCRAqT8f8ET4JEBTO5zo67MlQP02GeGSbyZApzKW2TkrJ0BRLhPS4OYnQGo7ImybRhRAvTIcXem9FUARKhZONzUXQGUhED+FrBhAuRgKMNMjGkAMEAQhIZsbQGAH\u002fhFvEh1AtP73Ar2JHkAE+\u002fh5hQAgQK72dXIsvCBAWPLyatN3IUAB7m9jejMiQKzp7Fsh7yJAVeVpVMiqI0D\u002f4OZMb2YkQKncY0UWIiVAU9jgPb3dJUD90102ZJkmQKfP2i4LVSdAUctXJ7IQKEBqdasWPpoUQL5spQeMERZAEmSf+NmIF0BmW5npJwAZQLpSk9p1dxpADEqNy8PuG0BgQYe8EWYdQLQ4ga1f3R5ABJg9z1YqIECuk7rH\u002feUgQFiPN8CkoSFAAYu0uEtdIkCshjGx8hgjQFWCrqmZ1CNA\u002f30rokCQJECpeaia50slQFN1JZOOByZA\u002fXCiizXDJkCnbB+E3H4nQFFonHyDOihAa680weDtFEC+pi6yLmUWQBKeKKN83BdAZpUilMpTGUC6jByFGMsaQA2EFnZmQhxAYXsQZ7S5HUC1cgpYAjEfQAQ1giQoVCBArjD\u002fHM8PIUBYLHwVdsshQAIo+Q0dhyJArCN2BsRCI0BWH\u002fP+av4jQAAbcPcRuiRAqhbt77h1JUBUEmroXzEmQP4N5+AG7SZAqAlk2a2oJ0BSBeHRVGQoQGzpvWuDQRVAwOC3XNG4FkAT2LFNHzAYQGfPqz5tpxlAu8alL7seG0AOvp8gCZYcQGK1mRFXDR5AtqyTAqWEH0AF0sZ5+X0gQK\u002fNQ3KgOSFAWcnAakf1IUACxT1j7rAiQK3AuluVbCNAVrw3VDwoJEAAuLRM4+MkQKqzMUWKnyVAVK+uPTFbJkD+qis22BYnQKimqC5\u002f0idAUqIlJyaOKEA=","shape":"20, 20"},"type":"surface"},{"hoverinfo":"skip","line":{"color":"#e74c3c","width":4},"mode":"lines","showlegend":false,"x":[2,2],"y":[8,8],"z":[5.622386341554882,5.997371322408986],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#3498db","width":4},"mode":"lines","showlegend":false,"x":[3,3],"y":[6,6],"z":[5.930794789789397,5.389388559063052],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#e74c3c","width":4},"mode":"lines","showlegend":false,"x":[5,5],"y":[7,7],"z":[7.517504800758034,7.818150830480555],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#e74c3c","width":4},"mode":"lines","showlegend":false,"x":[4,4],"y":[3,3],"z":[6.045224615123992,6.218423885126421],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#3498db","width":4},"mode":"lines","showlegend":false,"x":[6,6],"y":[5,5],"z":[7.825913248992549,7.0126773002213305],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#e74c3c","width":4},"mode":"lines","showlegend":false,"x":[7,7],"y":[9,9],"z":[9.29819343462659,9.312690434440656],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#e74c3c","width":4},"mode":"lines","showlegend":false,"x":[8,8],"y":[4,4],"z":[9.024666014161342,9.463370252405912],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#e74c3c","width":4},"mode":"lines","showlegend":false,"x":[5,5],"y":[6,6],"z":[7.323526177858113,7.513947783322328],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#3498db","width":4},"mode":"lines","showlegend":false,"x":[9,9],"y":[8,8],"z":[10.496946199795383,10.124420491252039],"type":"scatter3d"},{"hoverinfo":"skip","line":{"color":"#e74c3c","width":4},"mode":"lines","showlegend":false,"x":[10,10],"y":[7,7],"z":[10.999333270929823,11.234048034868772],"type":"scatter3d"},{"hovertemplate":"X\u2081: %{x:.1f}\u003cbr\u003eX\u2082: %{y:.1f}\u003cbr\u003e\u0176: %{z:.1f}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#95a5a6","size":4,"symbol":"diamond"},"mode":"markers","name":"Prediktioner (\u0176)","x":{"dtype":"i1","bdata":"AgMFBAYHCAUJCg=="},"y":{"dtype":"i1","bdata":"CAYHAwUJBAYIBw=="},"z":{"dtype":"f8","bdata":"O9JZ2FJ9FkAKu\u002fVEIrkXQHEdS8fsER5AGLqLXE8uGEBABuczvE0fQMw0U8+smCJAkUoYBqEMIkCwM0VySksdQD38d7tv\u002fiRAh+VInKj\u002fJUA="},"type":"scatter3d"},{"hovertemplate":"X\u2081: %{x:.1f}\u003cbr\u003eX\u2082: %{y:.1f}\u003cbr\u003eY: %{z:.1f}\u003cextra\u003e\u003c\u002fextra\u003e","marker":{"color":"#2c3e50","line":{"color":"white","width":1},"size":6},"mode":"markers","name":"Observationer (Y)","x":{"dtype":"i1","bdata":"AgMFBAYHCAUJCg=="},"y":{"dtype":"i1","bdata":"CAYHAwUJBAYIBw=="},"z":{"dtype":"f8","bdata":"Btxu6E79F0ASc9rfu44VQNhv0FTJRR9ACSLNgqrfGECkaDdH+wwcQKlj6\u002fUYoCJAmgug3T7tIkBm4uRTSA4eQHDC6Qq0PyRArejeJNV3JkA="},"type":"scatter3d"}],                        {"template":{"data":{"histogram2dcontour":[{"type":"histogram2dcontour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"choropleth":[{"type":"choropleth","colorbar":{"outlinewidth":0,"ticks":""}}],"histogram2d":[{"type":"histogram2d","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"heatmap":[{"type":"heatmap","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"contourcarpet":[{"type":"contourcarpet","colorbar":{"outlinewidth":0,"ticks":""}}],"contour":[{"type":"contour","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"surface":[{"type":"surface","colorbar":{"outlinewidth":0,"ticks":""},"colorscale":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]]}],"mesh3d":[{"type":"mesh3d","colorbar":{"outlinewidth":0,"ticks":""}}],"scatter":[{"fillpattern":{"fillmode":"overlay","size":10,"solidity":0.2},"type":"scatter"}],"parcoords":[{"type":"parcoords","line":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolargl":[{"type":"scatterpolargl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"bar":[{"error_x":{"color":"#2a3f5f"},"error_y":{"color":"#2a3f5f"},"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"bar"}],"scattergeo":[{"type":"scattergeo","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterpolar":[{"type":"scatterpolar","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"histogram":[{"marker":{"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"histogram"}],"scattergl":[{"type":"scattergl","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatter3d":[{"type":"scatter3d","line":{"colorbar":{"outlinewidth":0,"ticks":""}},"marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermap":[{"type":"scattermap","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattermapbox":[{"type":"scattermapbox","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scatterternary":[{"type":"scatterternary","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"scattercarpet":[{"type":"scattercarpet","marker":{"colorbar":{"outlinewidth":0,"ticks":""}}}],"carpet":[{"aaxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"baxis":{"endlinecolor":"#2a3f5f","gridcolor":"white","linecolor":"white","minorgridcolor":"white","startlinecolor":"#2a3f5f"},"type":"carpet"}],"table":[{"cells":{"fill":{"color":"#EBF0F8"},"line":{"color":"white"}},"header":{"fill":{"color":"#C8D4E3"},"line":{"color":"white"}},"type":"table"}],"barpolar":[{"marker":{"line":{"color":"#E5ECF6","width":0.5},"pattern":{"fillmode":"overlay","size":10,"solidity":0.2}},"type":"barpolar"}],"pie":[{"automargin":true,"type":"pie"}]},"layout":{"autotypenumbers":"strict","colorway":["#636efa","#EF553B","#00cc96","#ab63fa","#FFA15A","#19d3f3","#FF6692","#B6E880","#FF97FF","#FECB52"],"font":{"color":"#2a3f5f"},"hovermode":"closest","hoverlabel":{"align":"left"},"paper_bgcolor":"white","plot_bgcolor":"#E5ECF6","polar":{"bgcolor":"#E5ECF6","angularaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"radialaxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"ternary":{"bgcolor":"#E5ECF6","aaxis":{"gridcolor":"white","linecolor":"white","ticks":""},"baxis":{"gridcolor":"white","linecolor":"white","ticks":""},"caxis":{"gridcolor":"white","linecolor":"white","ticks":""}},"coloraxis":{"colorbar":{"outlinewidth":0,"ticks":""}},"colorscale":{"sequential":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"sequentialminus":[[0.0,"#0d0887"],[0.1111111111111111,"#46039f"],[0.2222222222222222,"#7201a8"],[0.3333333333333333,"#9c179e"],[0.4444444444444444,"#bd3786"],[0.5555555555555556,"#d8576b"],[0.6666666666666666,"#ed7953"],[0.7777777777777778,"#fb9f3a"],[0.8888888888888888,"#fdca26"],[1.0,"#f0f921"]],"diverging":[[0,"#8e0152"],[0.1,"#c51b7d"],[0.2,"#de77ae"],[0.3,"#f1b6da"],[0.4,"#fde0ef"],[0.5,"#f7f7f7"],[0.6,"#e6f5d0"],[0.7,"#b8e186"],[0.8,"#7fbc41"],[0.9,"#4d9221"],[1,"#276419"]]},"xaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"yaxis":{"gridcolor":"white","linecolor":"white","ticks":"","title":{"standoff":15},"zerolinecolor":"white","automargin":true,"zerolinewidth":2},"scene":{"xaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"yaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2},"zaxis":{"backgroundcolor":"#E5ECF6","gridcolor":"white","linecolor":"white","showbackground":true,"ticks":"","zerolinecolor":"white","gridwidth":2}},"shapedefaults":{"line":{"color":"#2a3f5f"}},"annotationdefaults":{"arrowcolor":"#2a3f5f","arrowhead":0,"arrowwidth":1},"geo":{"bgcolor":"white","landcolor":"#E5ECF6","subunitcolor":"white","showland":true,"showlakes":true,"lakecolor":"white"},"title":{"x":0.05},"mapbox":{"style":"light"}}},"title":{"font":{"size":16},"text":"Multipel regression med tv\u00e5 prediktorer \u2014 R\u00b2 = 0.95\u003cbr\u003e\u003csup\u003eStrecken = residualer (SS\u003csub\u003eres\u003c\u002fsub\u003e). Rotera med musen!\u003c\u002fsup\u003e"},"scene":{"camera":{"eye":{"x":1.8,"y":-1.5,"z":0.9}},"xaxis":{"title":{"text":"Prediktor 1 (X\u2081)"},"backgroundcolor":"#fafafa","gridcolor":"#ddd"},"yaxis":{"title":{"text":"Prediktor 2 (X\u2082)"},"backgroundcolor":"#fafafa","gridcolor":"#ddd"},"zaxis":{"title":{"text":"Utfall (Y)"},"backgroundcolor":"#fafafa","gridcolor":"#ddd"}},"legend":{"x":0.02,"y":0.98,"bgcolor":"rgba(255,255,255,0.8)"},"margin":{"l":0,"r":0,"t":80,"b":0},"width":800,"height":600},                        {"responsive": true}                    )                };            </script>        </div>
+<h1>Multipel regression med två prediktorer</h1>
+<p class="sub">Interaktiv 3D-visualisering. Rotera med musen. Röda streck = positiva residualer, blå = negativa.</p>
+
+<div class="controls">
+  <button id="btn-good" onclick="show('good')">Bra regression (hög R²)</button>
+  <button id="btn-medium" onclick="show('medium')">Måttlig regression</button>
+  <button id="btn-bad" onclick="show('bad')">Svag regression (låg R²)</button>
+  <button id="btn-null" onclick="show('null')">Noll-effekt (bara brus)</button>
+</div>
+
+<div class="stats" id="stats"></div>
+
+<div id="plot"></div>
+
+<p class="note">SS<sub>tot</sub> = total varians i Y. SS<sub>res</sub> = oförklarad varians (summan av kvadrerade residualer). R² = 1 − SS<sub>res</sub>/SS<sub>tot</sub>.</p>
+
+<script>
+// ---------- Slumptalsgenerator med seed för reproducerbarhet ----------
+function makeRNG(seed) {
+  let s = seed;
+  const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  const randn = () => {
+    let u = 0, v = 0;
+    while (u === 0) u = rand();
+    while (v === 0) v = rand();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+  };
+  return { rand, randn };
+}
+
+// ---------- Generera data för olika scenarier ----------
+function generateScenario(type) {
+  const n = 30;
+  const { rand, randn } = makeRNG(42);
+  const X1 = [], X2 = [], Y = [];
+
+  let b0, b1, b2, noise, title, desc;
+  if (type === 'good') {
+    b0 = 1; b1 = 0.8; b2 = 0.3; noise = 0.5;
+    title = "Bra regression — tydliga samband";
+    desc = "Båda prediktorerna har genuina effekter. Residualerna är små.";
+  } else if (type === 'medium') {
+    b0 = 3; b1 = 0.4; b2 = 0.2; noise = 1.5;
+    title = "Måttlig regression";
+    desc = "Sambanden finns men är svagare, och residualerna är större.";
+  } else if (type === 'bad') {
+    b0 = 5; b1 = 0.15; b2 = 0.08; noise = 2.8;
+    title = "Svag regression — mycket brus";
+    desc = "Små lutningar drunknar i variationen. R² blir lågt.";
+  } else { // null
+    b0 = 7; b1 = 0.0; b2 = 0.0; noise = 2.5;
+    title = "Noll-effekt — hög SStot men inget samband";
+    desc = "Y varierar kraftigt men prediktorerna säger inget om var observationerna hamnar. Planet blir nästan platt.";
+  }
+
+  for (let i = 0; i < n; i++) {
+    const x1 = 1 + rand() * 9;
+    const x2 = 1 + rand() * 9;
+    const y = b0 + b1 * x1 + b2 * x2 + noise * randn();
+    X1.push(x1); X2.push(x2); Y.push(y);
+  }
+  return { X1, X2, Y, title, desc };
+}
+
+// ---------- OLS-lösning via 3×3-matrisinversion ----------
+function fitOLS(X1, X2, Y) {
+  const n = X1.length;
+  let sX1 = 0, sX2 = 0, sY = 0;
+  let sX1X1 = 0, sX2X2 = 0, sX1X2 = 0;
+  let sX1Y = 0, sX2Y = 0;
+  for (let i = 0; i < n; i++) {
+    sX1 += X1[i]; sX2 += X2[i]; sY += Y[i];
+    sX1X1 += X1[i]*X1[i]; sX2X2 += X2[i]*X2[i]; sX1X2 += X1[i]*X2[i];
+    sX1Y += X1[i]*Y[i]; sX2Y += X2[i]*Y[i];
+  }
+  const A = [[n, sX1, sX2], [sX1, sX1X1, sX1X2], [sX2, sX1X2, sX2X2]];
+  const b = [sY, sX1Y, sX2Y];
+  const det = A[0][0]*(A[1][1]*A[2][2] - A[1][2]*A[2][1])
+            - A[0][1]*(A[1][0]*A[2][2] - A[1][2]*A[2][0])
+            + A[0][2]*(A[1][0]*A[2][1] - A[1][1]*A[2][0]);
+  const inv = [
+    [(A[1][1]*A[2][2] - A[1][2]*A[2][1])/det,
+     -(A[0][1]*A[2][2] - A[0][2]*A[2][1])/det,
+     (A[0][1]*A[1][2] - A[0][2]*A[1][1])/det],
+    [-(A[1][0]*A[2][2] - A[1][2]*A[2][0])/det,
+     (A[0][0]*A[2][2] - A[0][2]*A[2][0])/det,
+     -(A[0][0]*A[1][2] - A[0][2]*A[1][0])/det],
+    [(A[1][0]*A[2][1] - A[1][1]*A[2][0])/det,
+     -(A[0][0]*A[2][1] - A[0][1]*A[2][0])/det,
+     (A[0][0]*A[1][1] - A[0][1]*A[1][0])/det]
+  ];
+  return [
+    inv[0][0]*b[0] + inv[0][1]*b[1] + inv[0][2]*b[2],
+    inv[1][0]*b[0] + inv[1][1]*b[1] + inv[1][2]*b[2],
+    inv[2][0]*b[0] + inv[2][1]*b[1] + inv[2][2]*b[2]
+  ];
+}
+
+// ---------- Huvudfunktion ----------
+function show(type) {
+  document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + type).classList.add('active');
+
+  const { X1, X2, Y, title, desc } = generateScenario(type);
+  const [b0, b1, b2] = fitOLS(X1, X2, Y);
+
+  // Predikterade värden och residualer
+  const yhat = X1.map((x1, i) => b0 + b1 * x1 + b2 * X2[i]);
+  const resid = Y.map((y, i) => y - yhat[i]);
+  const meanY = Y.reduce((a, v) => a + v, 0) / Y.length;
+  const SStot = Y.reduce((a, y) => a + (y - meanY) ** 2, 0);
+  const SSres = resid.reduce((a, r) => a + r ** 2, 0);
+  const R2 = 1 - SSres / SStot;
+
+  // Uppdatera statistikruta
+  document.getElementById('stats').innerHTML = `
+    <div class="eq">Ŷ = <strong>${b0.toFixed(2)}</strong>
+      + <strong>${b1.toFixed(2)}</strong> · X₁
+      + <strong>${b2.toFixed(2)}</strong> · X₂</div>
+    <div>R² = <strong>${R2.toFixed(3)}</strong>
+      &nbsp;|&nbsp; SS<sub>tot</sub> = ${SStot.toFixed(1)}
+      &nbsp;|&nbsp; SS<sub>res</sub> = ${SSres.toFixed(1)}
+      &nbsp;|&nbsp; n = ${Y.length}</div>
+    <div style="margin-top:6px; color:#666; font-family: system-ui;">${desc}</div>
+  `;
+
+  // Bygg regressionsplan (rutnät 20×20 över data)
+  const gridSize = 20;
+  const x1min = Math.min(...X1), x1max = Math.max(...X1);
+  const x2min = Math.min(...X2), x2max = Math.max(...X2);
+  const planeX = [], planeY = [], planeZ = [];
+  for (let i = 0; i < gridSize; i++) {
+    const rowX = [], rowY = [], rowZ = [];
+    for (let j = 0; j < gridSize; j++) {
+      const xa = x1min + (x1max - x1min) * j / (gridSize - 1);
+      const xb = x2min + (x2max - x2min) * i / (gridSize - 1);
+      rowX.push(xa); rowY.push(xb); rowZ.push(b0 + b1 * xa + b2 * xb);
+    }
+    planeX.push(rowX); planeY.push(rowY); planeZ.push(rowZ);
+  }
+
+  // Residualstreck (färgade efter tecken)
+  const residualTraces = X1.map((x1, i) => ({
+    type: 'scatter3d', mode: 'lines',
+    x: [x1, x1], y: [X2[i], X2[i]], z: [Y[i], yhat[i]],
+    line: { color: resid[i] >= 0 ? '#e74c3c' : '#3498db', width: 4 },
+    hoverinfo: 'skip', showlegend: false
+  }));
+
+  const traces = [
+    {
+      type: 'surface', x: planeX, y: planeY, z: planeZ,
+      colorscale: [[0, '#3498db'], [1, '#2c3e50']],
+      opacity: 0.35, showscale: false, name: 'Regressionsplan',
+      hovertemplate: 'X₁: %{x:.1f}<br>X₂: %{y:.1f}<br>Ŷ: %{z:.1f}<extra>Regressionsplan</extra>'
+    },
+    ...residualTraces,
+    {
+      type: 'scatter3d', mode: 'markers',
+      x: X1, y: X2, z: yhat,
+      marker: { color: '#95a5a6', size: 4, symbol: 'diamond' },
+      name: 'Prediktioner (Ŷ)',
+      hovertemplate: 'X₁: %{x:.1f}<br>X₂: %{y:.1f}<br>Ŷ: %{z:.1f}<extra></extra>'
+    },
+    {
+      type: 'scatter3d', mode: 'markers',
+      x: X1, y: X2, z: Y,
+      marker: { color: '#2c3e50', size: 6, line: { color: 'white', width: 1 } },
+      name: 'Observationer (Y)',
+      hovertemplate: 'X₁: %{x:.1f}<br>X₂: %{y:.1f}<br>Y: %{z:.1f}<extra></extra>'
+    }
+  ];
+
+  const layout = {
+    title: { text: `${title} &mdash; R² = ${R2.toFixed(3)}`, font: { size: 15 } },
+    scene: {
+      camera: { eye: { x: 1.8, y: -1.5, z: 0.9 } },
+      xaxis: { title: { text: 'Prediktor 1 (X₁)' }, backgroundcolor: '#fafafa', gridcolor: '#ddd' },
+      yaxis: { title: { text: 'Prediktor 2 (X₂)' }, backgroundcolor: '#fafafa', gridcolor: '#ddd' },
+      zaxis: { title: { text: 'Utfall (Y)' }, backgroundcolor: '#fafafa', gridcolor: '#ddd' }
+    },
+    legend: { x: 0.02, y: 0.98, bgcolor: 'rgba(255,255,255,0.8)' },
+    margin: { l: 0, r: 0, t: 50, b: 0 }
+  };
+
+  Plotly.react('plot', traces, layout, { responsive: true });
+}
+
+// Starta med "bra regression"
+show('good');
+</script>
 </body>
 </html>
