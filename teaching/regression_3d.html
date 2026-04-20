@@ -50,11 +50,28 @@ function makeRNG(seed) {
   return { rand, randn };
 }
 
-// ---------- Generera data för olika scenarier ----------
-function generateScenario(type) {
+// ---------- FIXA X-positioner (samma datapunkter i svärmen oavsett scenario) ----------
+// Vi genererar X1 och X2 en gång så att observationerna alltid ligger på
+// exakt samma plats i prediktorutrymmet. Bara Y (och därmed planet) förändras.
+const FIXED_X = (() => {
+  const { rand } = makeRNG(42);
   const n = 30;
-  const { rand, randn } = makeRNG(42);
-  const X1 = [], X2 = [], Y = [];
+  const X1 = [], X2 = [];
+  for (let i = 0; i < n; i++) {
+    X1.push(1 + rand() * 9);
+    X2.push(1 + rand() * 9);
+  }
+  return { X1, X2, n };
+})();
+
+// ---------- Generera Y för olika scenarier (samma X, ny Y) ----------
+function generateScenario(type) {
+  const { X1, X2, n } = FIXED_X;
+  // Olika seed för bruset per scenario, men X-positionerna är alltid samma
+  const { randn } = makeRNG(type === 'good' ? 100 :
+                             type === 'medium' ? 200 :
+                             type === 'bad' ? 300 : 400);
+  const Y = [];
 
   let b0, b1, b2, noise, title, desc;
   if (type === 'good') {
@@ -76,10 +93,7 @@ function generateScenario(type) {
   }
 
   for (let i = 0; i < n; i++) {
-    const x1 = 1 + rand() * 9;
-    const x2 = 1 + rand() * 9;
-    const y = b0 + b1 * x1 + b2 * x2 + noise * randn();
-    X1.push(x1); X2.push(x2); Y.push(y);
+    Y.push(b0 + b1 * X1[i] + b2 * X2[i] + noise * randn());
   }
   return { X1, X2, Y, title, desc };
 }
