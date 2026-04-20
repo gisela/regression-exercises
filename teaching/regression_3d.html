@@ -17,27 +17,32 @@
   .stats .eq { font-size: 1.05em; margin-bottom: 6px; }
   #plot { width: 100%; height: 600px; }
   .note { font-size: 0.85em; color: #888; margin-top: 8px; }
+  .note strong { color: #2A6496; }
 </style>
 </head>
 <body>
-<h1>Multipel regression med två prediktorer</h1>
-<p class="sub">Interaktiv 3D-visualisering. Rotera med musen. Röda streck = positiva residualer, blå = negativa.</p>
+<h1>Multipel regression — samma data, olika modeller</h1>
+<p class="sub">De 30 datapunkterna är desamma hela tiden. Det som ändras är planet (modellen) som försöker förklara variationen i Y. Rotera med musen.</p>
 
 <div class="controls">
-  <button id="btn-good" onclick="show('good')">Bra regression (hög R²)</button>
-  <button id="btn-medium" onclick="show('medium')">Måttlig regression</button>
-  <button id="btn-bad" onclick="show('bad')">Svag regression (låg R²)</button>
-  <button id="btn-null" onclick="show('null')">Noll-effekt (bara brus)</button>
+  <button id="btn-ols" onclick="show('ols')">OLS — bästa passning</button>
+  <button id="btn-bad" onclick="show('bad')">Dåligt vald modell</button>
+  <button id="btn-null" onclick="show('null')">Nollmodell (platt plan)</button>
+  <button id="btn-wrong" onclick="show('wrong')">Fel tecken</button>
 </div>
 
 <div class="stats" id="stats"></div>
 
 <div id="plot"></div>
 
-<p class="note">SS<sub>tot</sub> = total varians i Y. SS<sub>res</sub> = oförklarad varians (summan av kvadrerade residualer). R² = 1 − SS<sub>res</sub>/SS<sub>tot</sub>.</p>
+<p class="note">
+  <strong>SS<sub>tot</sub></strong> = total variation i Y (ändras inte — datan är fix).<br>
+  <strong>SS<sub>res</sub></strong> = oförklarad variation (summan av kvadrerade residualer — beror på modellen).<br>
+  <strong>R² = 1 − SS<sub>res</sub>/SS<sub>tot</sub></strong>. OLS är det plan som minimerar SS<sub>res</sub> (och därmed maximerar R²). Andra plan passar sämre.
+</p>
 
 <script>
-// ---------- Slumptalsgenerator med seed för reproducerbarhet ----------
+// ---------- Slumptalsgenerator med seed ----------
 function makeRNG(seed) {
   let s = seed;
   const rand = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
@@ -50,60 +55,33 @@ function makeRNG(seed) {
   return { rand, randn };
 }
 
-// ---------- FIXA X-positioner (samma datapunkter i svärmen oavsett scenario) ----------
-// Vi genererar X1 och X2 en gång så att observationerna alltid ligger på
-// exakt samma plats i prediktorutrymmet. Bara Y (och därmed planet) förändras.
-const FIXED_X = (() => {
-  const { rand } = makeRNG(42);
+// ---------- EN fixad datamängd (genereras en gång, ändras aldrig) ----------
+const DATA = (() => {
+  const { rand, randn } = makeRNG(42);
   const n = 30;
-  const X1 = [], X2 = [];
+  const X1 = [], X2 = [], Y = [];
+  // Måttligt starka samband + realistiskt brus
+  const trueB0 = 2, trueB1 = 0.6, trueB2 = 0.3, noise = 1.2;
   for (let i = 0; i < n; i++) {
-    X1.push(1 + rand() * 9);
-    X2.push(1 + rand() * 9);
+    const x1 = 1 + rand() * 9;
+    const x2 = 1 + rand() * 9;
+    const y = trueB0 + trueB1 * x1 + trueB2 * x2 + noise * randn();
+    X1.push(x1); X2.push(x2); Y.push(y);
   }
-  return { X1, X2, n };
+  return { X1, X2, Y, n };
 })();
 
-// ---------- Generera Y för olika scenarier (samma X, ny Y) ----------
-function generateScenario(type) {
-  const { X1, X2, n } = FIXED_X;
-  // Olika seed för bruset per scenario, men X-positionerna är alltid samma
-  const { randn } = makeRNG(type === 'good' ? 100 :
-                             type === 'medium' ? 200 :
-                             type === 'bad' ? 300 : 400);
-  const Y = [];
-
-  let b0, b1, b2, noise, title, desc;
-  if (type === 'good') {
-    b0 = 1; b1 = 0.8; b2 = 0.3; noise = 0.5;
-    title = "Bra regression — tydliga samband";
-    desc = "Båda prediktorerna har genuina effekter. Residualerna är små.";
-  } else if (type === 'medium') {
-    b0 = 3; b1 = 0.4; b2 = 0.2; noise = 1.5;
-    title = "Måttlig regression";
-    desc = "Sambanden finns men är svagare, och residualerna är större.";
-  } else if (type === 'bad') {
-    b0 = 5; b1 = 0.15; b2 = 0.08; noise = 2.8;
-    title = "Svag regression — mycket brus";
-    desc = "Små lutningar drunknar i variationen. R² blir lågt.";
-  } else { // null
-    b0 = 7; b1 = 0.0; b2 = 0.0; noise = 2.5;
-    title = "Noll-effekt — hög SStot men inget samband";
-    desc = "Y varierar kraftigt men prediktorerna säger inget om var observationerna hamnar. Planet blir nästan platt.";
-  }
-
-  for (let i = 0; i < n; i++) {
-    Y.push(b0 + b1 * X1[i] + b2 * X2[i] + noise * randn());
-  }
-  return { X1, X2, Y, title, desc };
-}
+// Fixa värden som inte ändras
+const meanY = DATA.Y.reduce((a, v) => a + v, 0) / DATA.n;
+const SStot = DATA.Y.reduce((a, y) => a + (y - meanY) ** 2, 0);
+const meanX1 = DATA.X1.reduce((a, v) => a + v, 0) / DATA.n;
+const meanX2 = DATA.X2.reduce((a, v) => a + v, 0) / DATA.n;
 
 // ---------- OLS-lösning via 3×3-matrisinversion ----------
 function fitOLS(X1, X2, Y) {
   const n = X1.length;
   let sX1 = 0, sX2 = 0, sY = 0;
-  let sX1X1 = 0, sX2X2 = 0, sX1X2 = 0;
-  let sX1Y = 0, sX2Y = 0;
+  let sX1X1 = 0, sX2X2 = 0, sX1X2 = 0, sX1Y = 0, sX2Y = 0;
   for (let i = 0; i < n; i++) {
     sX1 += X1[i]; sX2 += X2[i]; sY += Y[i];
     sX1X1 += X1[i]*X1[i]; sX2X2 += X2[i]*X2[i]; sX1X2 += X1[i]*X2[i];
@@ -132,38 +110,70 @@ function fitOLS(X1, X2, Y) {
   ];
 }
 
-// ---------- Huvudfunktion ----------
+// OLS-lösningen beräknas en gång (referens för "rätt" plan)
+const OLS = fitOLS(DATA.X1, DATA.X2, DATA.Y);
+
+// ---------- Definiera modellerna ----------
+function getModel(type) {
+  if (type === 'ols') {
+    return {
+      b: OLS,
+      title: "OLS — bästa möjliga linjära passning",
+      desc: "Detta plan minimerar summan av kvadrerade residualer (SS<sub>res</sub>). Ingen annan linjär modell kan förklara mer av variationen i Y för just denna data."
+    };
+  } else if (type === 'null') {
+    return {
+      b: [meanY, 0, 0],
+      title: "Nollmodell — platt plan vid medel(Y)",
+      desc: "Ingen av prediktorerna används. Vi gissar medelvärdet för alla. Detta ger SS<sub>res</sub> = SS<sub>tot</sub> och därmed R² = 0 per definition."
+    };
+  } else if (type === 'bad') {
+    // Halverade lutningar — planet lutar åt rätt håll men för lite
+    return {
+      b: [OLS[0] + OLS[1]*meanX1*0.5 + OLS[2]*meanX2*0.5, OLS[1] * 0.5, OLS[2] * 0.5],
+      title: "Dåligt vald modell — för små lutningar",
+      desc: "Vi väljer lutningar som är halva OLS-lutningarna. Planet går åt rätt håll men inte tillräckligt brant. SS<sub>res</sub> blir större än för OLS."
+    };
+  } else { // wrong
+    // Fel tecken på båda lutningarna
+    return {
+      b: [OLS[0] + 2*OLS[1]*meanX1 + 2*OLS[2]*meanX2, -OLS[1], -OLS[2]],
+      title: "Modell med fel tecken",
+      desc: "Lutningarna har omvänt tecken. Planet lutar åt fel håll. Modellen passar MYCKET sämre än att bara gissa medelvärdet — R² blir negativ."
+    };
+  }
+}
+
+// ---------- Rendera ----------
 function show(type) {
   document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
   document.getElementById('btn-' + type).classList.add('active');
 
-  const { X1, X2, Y, title, desc } = generateScenario(type);
-  const [b0, b1, b2] = fitOLS(X1, X2, Y);
+  const { b, title, desc } = getModel(type);
+  const [b0, b1, b2] = b;
 
-  // Predikterade värden och residualer
-  const yhat = X1.map((x1, i) => b0 + b1 * x1 + b2 * X2[i]);
-  const resid = Y.map((y, i) => y - yhat[i]);
-  const meanY = Y.reduce((a, v) => a + v, 0) / Y.length;
-  const SStot = Y.reduce((a, y) => a + (y - meanY) ** 2, 0);
+  // Prediktioner och residualer (för fixa Y)
+  const yhat = DATA.X1.map((x1, i) => b0 + b1 * x1 + b2 * DATA.X2[i]);
+  const resid = DATA.Y.map((y, i) => y - yhat[i]);
   const SSres = resid.reduce((a, r) => a + r ** 2, 0);
   const R2 = 1 - SSres / SStot;
 
-  // Uppdatera statistikruta
+  // Statistikruta
   document.getElementById('stats').innerHTML = `
     <div class="eq">Ŷ = <strong>${b0.toFixed(2)}</strong>
       + <strong>${b1.toFixed(2)}</strong> · X₁
       + <strong>${b2.toFixed(2)}</strong> · X₂</div>
-    <div>R² = <strong>${R2.toFixed(3)}</strong>
-      &nbsp;|&nbsp; SS<sub>tot</sub> = ${SStot.toFixed(1)}
-      &nbsp;|&nbsp; SS<sub>res</sub> = ${SSres.toFixed(1)}
-      &nbsp;|&nbsp; n = ${Y.length}</div>
+    <div>R² = <strong style="color:${R2 < 0 ? '#c0392b' : '#2A6496'}">${R2.toFixed(3)}</strong>
+      &nbsp;|&nbsp; SS<sub>tot</sub> = <strong>${SStot.toFixed(1)}</strong> (fix)
+      &nbsp;|&nbsp; SS<sub>res</sub> = <strong>${SSres.toFixed(1)}</strong>
+      &nbsp;|&nbsp; n = ${DATA.n}</div>
     <div style="margin-top:6px; color:#666; font-family: system-ui;">${desc}</div>
   `;
 
-  // Bygg regressionsplan (rutnät 20×20 över data)
+  // Regressionsplan (20×20 rutnät över data)
   const gridSize = 20;
-  const x1min = Math.min(...X1), x1max = Math.max(...X1);
-  const x2min = Math.min(...X2), x2max = Math.max(...X2);
+  const x1min = Math.min(...DATA.X1), x1max = Math.max(...DATA.X1);
+  const x2min = Math.min(...DATA.X2), x2max = Math.max(...DATA.X2);
   const planeX = [], planeY = [], planeZ = [];
   for (let i = 0; i < gridSize; i++) {
     const rowX = [], rowY = [], rowZ = [];
@@ -175,32 +185,37 @@ function show(type) {
     planeX.push(rowX); planeY.push(rowY); planeZ.push(rowZ);
   }
 
-  // Residualstreck (färgade efter tecken)
-  const residualTraces = X1.map((x1, i) => ({
+  // Residualstreck (röda/blåa)
+  const residualTraces = DATA.X1.map((x1, i) => ({
     type: 'scatter3d', mode: 'lines',
-    x: [x1, x1], y: [X2[i], X2[i]], z: [Y[i], yhat[i]],
+    x: [x1, x1], y: [DATA.X2[i], DATA.X2[i]], z: [DATA.Y[i], yhat[i]],
     line: { color: resid[i] >= 0 ? '#e74c3c' : '#3498db', width: 4 },
     hoverinfo: 'skip', showlegend: false
   }));
+
+  // Fixa z-axelns range så att jämförelsen blir visuell
+  const allZ = [...DATA.Y, ...yhat, ...planeZ.flat()];
+  const zmin = Math.min(...allZ) - 1;
+  const zmax = Math.max(...allZ) + 1;
 
   const traces = [
     {
       type: 'surface', x: planeX, y: planeY, z: planeZ,
       colorscale: [[0, '#3498db'], [1, '#2c3e50']],
-      opacity: 0.35, showscale: false, name: 'Regressionsplan',
-      hovertemplate: 'X₁: %{x:.1f}<br>X₂: %{y:.1f}<br>Ŷ: %{z:.1f}<extra>Regressionsplan</extra>'
+      opacity: 0.35, showscale: false, name: 'Modellplan',
+      hovertemplate: 'X₁: %{x:.1f}<br>X₂: %{y:.1f}<br>Ŷ: %{z:.1f}<extra>Modellplan</extra>'
     },
     ...residualTraces,
     {
       type: 'scatter3d', mode: 'markers',
-      x: X1, y: X2, z: yhat,
+      x: DATA.X1, y: DATA.X2, z: yhat,
       marker: { color: '#95a5a6', size: 4, symbol: 'diamond' },
       name: 'Prediktioner (Ŷ)',
       hovertemplate: 'X₁: %{x:.1f}<br>X₂: %{y:.1f}<br>Ŷ: %{z:.1f}<extra></extra>'
     },
     {
       type: 'scatter3d', mode: 'markers',
-      x: X1, y: X2, z: Y,
+      x: DATA.X1, y: DATA.X2, z: DATA.Y,
       marker: { color: '#2c3e50', size: 6, line: { color: 'white', width: 1 } },
       name: 'Observationer (Y)',
       hovertemplate: 'X₁: %{x:.1f}<br>X₂: %{y:.1f}<br>Y: %{z:.1f}<extra></extra>'
@@ -213,7 +228,7 @@ function show(type) {
       camera: { eye: { x: 1.8, y: -1.5, z: 0.9 } },
       xaxis: { title: { text: 'Prediktor 1 (X₁)' }, backgroundcolor: '#fafafa', gridcolor: '#ddd' },
       yaxis: { title: { text: 'Prediktor 2 (X₂)' }, backgroundcolor: '#fafafa', gridcolor: '#ddd' },
-      zaxis: { title: { text: 'Utfall (Y)' }, backgroundcolor: '#fafafa', gridcolor: '#ddd' }
+      zaxis: { title: { text: 'Utfall (Y)' }, range: [zmin, zmax], backgroundcolor: '#fafafa', gridcolor: '#ddd' }
     },
     legend: { x: 0.02, y: 0.98, bgcolor: 'rgba(255,255,255,0.8)' },
     margin: { l: 0, r: 0, t: 50, b: 0 }
@@ -222,8 +237,8 @@ function show(type) {
   Plotly.react('plot', traces, layout, { responsive: true });
 }
 
-// Starta med "bra regression"
-show('good');
+// Starta med OLS
+show('ols');
 </script>
 </body>
 </html>
