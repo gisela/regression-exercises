@@ -1,0 +1,342 @@
+---
+title: "Block 1 --- Starter"
+subtitle: "Formulera forskningsfråga och utforska tre variabler"
+author: "Gisela Bäcklander, gisela.backlander@fhs.se, ILL, FHS"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-tools: true
+    self-contained: true
+lang: sv
+---
+
+## Uppgift Block 1
+
+- **Formulera en forskningsfråga** baserad på tre variabler
+- **Rita en modell** (på papper eller i PowerPoint)
+- **Gör följande statistiska analyser:**
+  - Skapa index
+  - Visualisera variablerna med histogram
+  - Genomför en korrelation med de variabler som ingår i er fråga
+  - Visualisera korrelationen med scatterplot
+- **Presentera muntligt** med stöd av PowerPoint
+
+Den här filen fungerar som ett startstöd. Öppna den parallellt med ditt valda dataset i RStudio, kopiera kod därifrån och anpassa till dina variabler. Den visar ett komplett exempel med team efficacy-datasetet.
+
+---
+
+## 1 Set-up
+
+```{.r}
+# Rensa arbetsmiljön (valfritt men ger en ren start)
+rm(list = ls()); graphics.off(); cat("\014")
+
+# Ladda paket
+library(tidyverse)   # För datahantering och ggplot
+library(psych)       # För Cronbachs alpha och deskriptiv statistik
+library(GGally)      # För ggpairs() — scatterplotmatris (valfritt)
+
+# Färgpalett för FHS
+FHSpalette <- c("#00465a", "#296C7F", "#EAF0F2",
+                "#481242", "#9f4494", "#f5d5ee",
+                "#584d29", "#d9cea7", "#fcf6e1")
+
+# Välj ut några färger att använda i plottar
+fhs_primary  <- "#00465a"   # Mörk blå
+fhs_accent   <- "#9f4494"   # Lila
+fhs_light    <- "#EAF0F2"   # Ljusblå bakgrund
+```
+
+---
+
+## 2 Läs in data
+
+Se till att filen ligger i din `working directory`. Du kan kolla med `getwd()` och ändra med `setwd()` eller via RStudio: **Session → Set Working Directory → To Source File Location**.
+
+```{.r}
+# Verifiera vilken mapp R arbetar i
+getwd()
+
+# Visa filer i arbetsmappen
+list.files()
+
+# Läs in data — byt filnamn till ditt valda dataset
+d <- read.csv("team_efficacy_individual.csv")
+```
+
+### 2.1 Första blicken på datan
+
+```{.r}
+# Dimensioner
+dim(d)           # antal rader och kolumner
+
+# Variabel-/kolumnnamn
+names(d)
+
+# Datastruktur (typer per kolumn)
+str(d)
+
+# Sammanfattande statistik
+summary(d)
+
+# Saknade värden per kolumn
+colSums(is.na(d))
+```
+
+---
+
+## 3 Formulera forskningsfråga och välj tre variabler
+
+Titta på `names(d)` och hitta tre variabler som hänger samman teoretiskt. Formulera en fråga om deras samband.
+
+**Exempelfrågor:**
+
+- *Hur hänger collective efficacy, transitionsprocesser och teamprestation ihop?*
+- *Är team med högre psykologisk trygghet bättre på interpersonella processer, och är det kopplat till teamtillfredsställelse?*
+
+I det här exemplet använder jag tre konstrukt från team efficacy-datasetet:
+
+- **Collective efficacy** (items `ce_1`–`ce_7`) --- teamets tilltro till sin förmåga
+- **Interpersonella processer** (items `tp_inter_1`–`tp_inter_10`) --- hur teamet hanterar relationer
+- **Teamtillfredsställelse** (items `sat_1`–`sat_3`) --- teammedlemmarnas nöjdhet
+
+### 3.1 Skapa vektorer med kolumnnamn
+
+```{.r}
+# Specificera items som ingår i varje skala
+ce_items    <- c("ce_1", "ce_2", "ce_3", "ce_4", "ce_5", "ce_6", "ce_7")
+inter_items <- c("tp_inter_1", "tp_inter_2", "tp_inter_3", "tp_inter_4",
+                 "tp_inter_5", "tp_inter_6", "tp_inter_7", "tp_inter_8",
+                 "tp_inter_9", "tp_inter_10")
+sat_items   <- c("sat_1", "sat_2", "sat_3")
+
+# Smidigare alternativ: hitta alla items som börjar med ett prefix
+ce_items    <- grep("^ce_",       names(d), value = TRUE)
+inter_items <- grep("^tp_inter_", names(d), value = TRUE)
+sat_items   <- grep("^sat_",      names(d), value = TRUE)
+
+# Kontrollera att du fått rätt kolumner
+ce_items
+inter_items
+sat_items
+```
+
+---
+
+## 4 Skapa index
+
+Ett **index** är ett sammanvägt mått av flera items som tillsammans mäter samma konstrukt. Vanligast är att ta **medelvärdet** över items.
+
+### 4.1 Kontrollera reliabilitet (Cronbachs alpha)
+
+Innan du aggregerar: kolla att items verkligen mäter samma sak. Cronbachs alpha > .70 är rimligt.
+
+```{.r}
+psych::alpha(d[, ce_items])
+psych::alpha(d[, inter_items])
+psych::alpha(d[, sat_items])
+```
+
+### 4.2 Beräkna index som medelvärde
+
+```{.r}
+d$collective_efficacy <- rowMeans(d[, ce_items],    na.rm = TRUE)
+d$interpersonal_proc  <- rowMeans(d[, inter_items], na.rm = TRUE)
+d$team_satisfaction   <- rowMeans(d[, sat_items],   na.rm = TRUE)
+
+# Kolla att det gick rätt
+summary(d[, c("collective_efficacy",
+              "interpersonal_proc",
+              "team_satisfaction")])
+```
+
+::: {.callout-note}
+### Om ditt dataset redan har index
+Vissa dataset i poolen har redan färdiga index (t.ex. kolumner som heter `collective_efficacy` direkt). Då kan du hoppa över del 4 och använda dem direkt.
+:::
+
+---
+
+## 5 Visualisera variablerna med histogram
+
+Histogram visar fördelningen för varje variabel --- hur värdena sprider sig.
+
+```{.r}
+# Välj de tre indexen för fortsatt analys
+mina_variabler <- c("collective_efficacy",
+                    "interpersonal_proc",
+                    "team_satisfaction")
+
+# Ett histogram i taget
+ggplot(d, aes(x = collective_efficacy)) +
+  geom_histogram(bins = 15,
+                 fill = fhs_primary,
+                 color = "white") +
+  labs(title = "Fördelning av Collective Efficacy",
+       x = "Collective Efficacy (1–7)",
+       y = "Antal respondenter") +
+  theme_minimal(base_size = 13)
+```
+
+### 5.1 Alla tre variablerna i samma figur
+
+```{.r}
+# Gör datan "lång" (en rad per observation × variabel)
+d_long <- d |>
+  select(all_of(mina_variabler)) |>
+  pivot_longer(everything(),
+               names_to = "variabel",
+               values_to = "vardet")
+
+ggplot(d_long, aes(x = vardet, fill = variabel)) +
+  geom_histogram(bins = 15, color = "white") +
+  facet_wrap(~ variabel, scales = "free", ncol = 3) +
+  scale_fill_manual(values = c(fhs_primary,
+                                FHSpalette[2],
+                                fhs_accent)) +
+  labs(title = "Fördelning av mina tre variabler",
+       x = NULL, y = "Antal") +
+  theme_minimal(base_size = 13) +
+  theme(legend.position = "none")
+```
+
+---
+
+## 6 Korrelationsanalys
+
+Korrelation mäter **styrkan och riktningen** i det linjära sambandet mellan två variabler (−1 till +1).
+
+### 6.1 Korrelationsmatris
+
+```{.r}
+# Välj ut variablerna och beräkna korrelationer
+cor_matrix <- cor(d[, mina_variabler], use = "complete.obs")
+round(cor_matrix, 2)
+```
+
+### 6.2 Signifikanstest för korrelationer
+
+```{.r}
+# psych::corr.test ger både r och p-värden
+korr <- psych::corr.test(d[, mina_variabler])
+korr$r   # korrelationer
+korr$p   # p-värden
+```
+
+### 6.3 Visualisera korrelationsmatrisen
+
+```{.r}
+# Omvandla matrisen till long format för ggplot
+cor_long <- as.data.frame(as.table(cor_matrix))
+names(cor_long) <- c("Var1", "Var2", "Korrelation")
+
+ggplot(cor_long, aes(x = Var1, y = Var2, fill = Korrelation)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(Korrelation, 2)), size = 4) +
+  scale_fill_gradient2(low  = FHSpalette[4],
+                       mid  = "white",
+                       high = fhs_primary,
+                       midpoint = 0,
+                       limits = c(-1, 1)) +
+  labs(title = "Korrelationer mellan mina tre variabler") +
+  theme_minimal(base_size = 13) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1),
+        axis.title = element_blank())
+```
+
+---
+
+## 7 Visualisera sambandet med scatterplot
+
+Scatterplot visar **de faktiska datapunkterna** --- varje punkt är en observation.
+
+```{.r}
+# Ett tvåvariabel-samband
+ggplot(d, aes(x = collective_efficacy, y = team_satisfaction)) +
+  geom_point(alpha = 0.5, size = 2, color = fhs_primary) +
+  geom_smooth(method = "lm", se = TRUE, color = fhs_accent) +
+  labs(title = "Samband mellan Collective Efficacy och Team Satisfaction",
+       x = "Collective Efficacy",
+       y = "Team Satisfaction") +
+  theme_minimal(base_size = 13)
+```
+
+### 7.1 Alla parvisa samband i samma figur
+
+```{.r}
+# ggpairs visar alla bivariata samband + histogram + korrelationer
+library(GGally)
+
+ggpairs(d[, mina_variabler],
+        lower = list(continuous = wrap("points",
+                                        alpha = 0.4,
+                                        color = fhs_primary)),
+        diag  = list(continuous = wrap("barDiag",
+                                        fill = fhs_primary,
+                                        color = "white")),
+        upper = list(continuous = wrap("cor",
+                                        size = 5))) +
+  theme_minimal(base_size = 12)
+```
+
+---
+
+## 8 Exportera figurer för PowerPoint
+
+### 8.1 Spara som PNG (snabb, för PowerPoint)
+
+```{.r}
+# Gör figuren först, sedan spara
+p1 <- ggplot(d, aes(x = collective_efficacy, y = team_satisfaction)) +
+  geom_point(alpha = 0.5, size = 2, color = fhs_primary) +
+  geom_smooth(method = "lm", se = TRUE, color = fhs_accent) +
+  labs(title = "Collective Efficacy och Team Satisfaction",
+       x = "Collective Efficacy",
+       y = "Team Satisfaction") +
+  theme_minimal(base_size = 14)
+
+ggsave("scatterplot.png", plot = p1,
+       width = 8, height = 5, dpi = 300)
+```
+
+### 8.2 Spara flera figurer i en PDF
+
+```{.r}
+pdf("block1_figurer.pdf", width = 10, height = 7)
+
+# Histogram
+print(
+  ggplot(d_long, aes(x = vardet, fill = variabel)) +
+    geom_histogram(bins = 15, color = "white") +
+    facet_wrap(~ variabel, scales = "free", ncol = 3) +
+    scale_fill_manual(values = c(fhs_primary, FHSpalette[2], fhs_accent)) +
+    labs(title = "Fördelning av mina variabler") +
+    theme_minimal(base_size = 13) +
+    theme(legend.position = "none")
+)
+
+# Scatterplot
+print(p1)
+
+dev.off()
+```
+
+---
+
+## 9 Tips inför presentationen
+
+- **Beskriv forskningsfrågan** i en mening eller två
+- **Visa modellen** (pil mellan variabler räcker)
+- **Välj EN graf att lyfta fram** --- scatterplotten är ofta mest informativ
+- **Rapportera korrelationerna** med tecken, styrka och signifikans: *"r = .52, p < .001"*
+- **Tolkning**: vad betyder resultatet? Hur svarar det på din forskningsfråga?
+
+---
+
+## Resurser
+
+- [Borg & Westerlund — Statistik för beteendevetare](https://www.studentlitteratur.se/) (bokkap.)
+- [Learning Statistics with R (Danielle Navarro)](https://learningstatisticswithr.com/book/) --- gratis online
