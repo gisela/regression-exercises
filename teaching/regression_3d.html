@@ -36,7 +36,7 @@
 <div id="plot"></div>
 
 <p class="note">
-  <strong>SS<sub>tot</sub></strong> = total variation i Y (ändras inte — datan är fix).<br>
+  <strong>SS<sub>tot</sub></strong> = total variation i Y (ändras inte, datan är vad den är).<br>
   <strong>SS<sub>res</sub></strong> = oförklarad variation (summan av kvadrerade residualer — beror på modellen).<br>
   <strong>R² = 1 − SS<sub>res</sub>/SS<sub>tot</sub></strong>. OLS är det plan som minimerar SS<sub>res</sub> (och därmed maximerar R²). Andra plan passar sämre.
 </p>
@@ -223,7 +223,7 @@ function show(type) {
   ];
 
   const layout = {
-    title: { text: `${title} &mdash; R² = ${R2.toFixed(3)}`, font: { size: 15 } },
+    title: { text: `${title} — R² = ${R2.toFixed(3)}`, font: { size: 15 } },
     scene: {
       camera: { eye: { x: 1.8, y: -1.5, z: 0.9 } },
       xaxis: { title: { text: 'Prediktor 1 (X₁)' }, backgroundcolor: '#fafafa', gridcolor: '#ddd' },
