@@ -8,8 +8,16 @@
 #   3. Kör ett steg i taget, modifiera variabelnamn där det behövs
 #   4. Där det står ÄNDRA HÄR behöver du anpassa till ditt dataset
 #
+# Skriptets struktur följer uppgiftens steg.
+# Extra hjälpfunktioner (deskriptiv statistik, korrelationer m.m.)
+# finns längst ner i skriptet.
+#
 # =============================================================================
 
+
+# =============================================================================
+# FÖRBEREDELSER OCH DATAINLÄSNING
+# =============================================================================
 
 # -----------------------------------------------------------------------------
 # 1. Förberedelser
@@ -63,9 +71,8 @@ View(d)              # öppnar datan för inspektion
 
 
 # -----------------------------------------------------------------------------
-# 3. Hitta och välj dina variabler
+# 3. Hitta dina variabler (och ev. skapa index från items)
 # -----------------------------------------------------------------------------
-
 # Datasetten har ofta items med liknande prefix, t.ex. MC_01, MC_02 ...
 # Det är lätt att hitta alla items som börjar med ett visst prefix:
 
@@ -73,49 +80,21 @@ View(d)              # öppnar datan för inspektion
 mina_items <- grep("^MC_", names(d), value = TRUE)
 mina_items
 
-
-# -----------------------------------------------------------------------------
-# 4. Skapa index (om ditt dataset har items)
-# -----------------------------------------------------------------------------
-# Ett index är ett medelvärde över flera items som mäter samma sak.
-# Vissa dataset har redan färdiga index — då kan du hoppa över det här steget.
-
-# Exempel: skapa index för mission command
+# Skapa index som medelvärde över items (hoppa över om ditt dataset redan
+# har färdiga index, t.ex. kolumnen collective_efficacy)
 d$mission_command <- rowMeans(d[, mina_items], na.rm = TRUE)
 
 # Upprepa för dina andra skalor — ÄNDRA HÄR för varje skala
 # mitt_index_2 <- grep("^EL_", names(d), value = TRUE)
 # d$empowering_leadership <- rowMeans(d[, mitt_index_2], na.rm = TRUE)
-# ...
-
-# Kolla att det gick rätt
-summary(d$mission_command)
 
 
-# -----------------------------------------------------------------------------
-# 5. Deskriptiv statistik
-# -----------------------------------------------------------------------------
-# Medelvärde, SD, min, max m.m. för variablerna i din analys.
-# Dessa värden behöver du när du skriver din APA-rapport.
-
-# ÄNDRA HÄR: byt ut variabelnamnen mot dina egna
-psych::describe(d[, c("Y", "X1", "X2", "X3")])
-
+# =============================================================================
+# UPPGIFTENS STEG 2: Enkel linjär regression
+# =============================================================================
 
 # -----------------------------------------------------------------------------
-# 6. Bivariat korrelationstabell
-# -----------------------------------------------------------------------------
-# Hur hänger variablerna ihop parvis? Bra att titta på innan regression.
-
-# ÄNDRA HÄR: byt ut variabelnamnen mot dina egna
-cor(d[, c("Y", "X1", "X2", "X3")], use = "complete.obs")
-
-# Om du även vill ha p-värden för korrelationerna:
-psych::corr.test(d[, c("Y", "X1", "X2", "X3")])
-
-
-# -----------------------------------------------------------------------------
-# 7. Enkel regression
+# 4. Kör enkel regression
 # -----------------------------------------------------------------------------
 # ÄNDRA HÄR: byt Y och X mot dina variabler
 
@@ -132,22 +111,28 @@ ggplot(d, aes(x = X, y = Y)) +                    # ÄNDRA HÄR
   theme_minimal(base_size = 13)
 
 
+# =============================================================================
+# UPPGIFTENS STEG 3: Multipel linjär regression
+# =============================================================================
+
 # -----------------------------------------------------------------------------
-# 8. Multipel regression
+# 5. Kör multipel regression
 # -----------------------------------------------------------------------------
 # ÄNDRA HÄR: byt Y och prediktorerna mot dina variabler
 
 model_multipel <- lm(Y ~ X1 + X2 + X3, data = d)
 summary(model_multipel)
 
-# Strukturerad output (broom) — kan vara lättare att läsa
+# Strukturerad output med konfidensintervall — kan vara lättare att läsa
 tidy(model_multipel, conf.int = TRUE)
 
 
 # -----------------------------------------------------------------------------
-# 9. Standardiserade koefficienter (β)
+# 6. Standardiserade koefficienter (β)
 # -----------------------------------------------------------------------------
-# För att jämföra prediktorers relativa vikt, standardisera alla variabler
+# För att jämföra prediktorers relativa vikt standardiserar vi (z-transformerar)
+# alla variabler och kör samma regression igen. Koefficienterna blir nu
+# jämförbara även om variablerna mäts på olika skalor.
 
 d_z <- d
 # ÄNDRA HÄR: lägg till alla dina variabler i listan
@@ -161,9 +146,9 @@ round(coef(model_std)[-1], 3)   # standardiserade betas
 
 
 # -----------------------------------------------------------------------------
-# 10. VIF-check (multikollinearitet)
+# 7. VIF-check (multikollinearitet)
 # -----------------------------------------------------------------------------
-# VIF < 5 = inget problem
+# VIF < 5  = inget problem
 # VIF 5-10 = kan vara problematiskt
 # VIF > 10 = allvarlig multikollinearitet
 
@@ -171,8 +156,9 @@ vif(model_multipel)
 
 
 # -----------------------------------------------------------------------------
-# 11. Visualisering: forest plot av standardiserade betas
+# 8. Visualisering: forest plot av standardiserade betas
 # -----------------------------------------------------------------------------
+# Bra om du vill jämföra prediktorernas relativa vikt visuellt.
 
 # Hämta koefficienter med konfidensintervall
 betas <- coef(model_std)[-1]
@@ -200,12 +186,14 @@ ggplot(forest_df, aes(x = Beta, y = reorder(Prediktor, Beta),
   theme_minimal(base_size = 13)
 
 
-# -----------------------------------------------------------------------------
-# 12. Fördjupning — välj en (eller flera) som passar ditt dataset
-# -----------------------------------------------------------------------------
+# =============================================================================
+# UPPGIFTENS STEG 4: Fördjupning — välj minst en
+# =============================================================================
 
-# ---- a) Moderering / interaktion --------------------------------------------
-# Testa om effekten av X1 beror på X2
+# -----------------------------------------------------------------------------
+# 9a. Moderering / interaktion
+# -----------------------------------------------------------------------------
+# Testa om effekten av X1 beror på X2 (t.ex. "buffrar X2 X1?")
 
 # Centrera prediktorerna för tolkbar interaktion
 d$X1_c <- d$X1 - mean(d$X1, na.rm = TRUE)         # ÄNDRA HÄR
@@ -215,8 +203,11 @@ model_int <- lm(Y ~ X1 + X2 + X3 + X1_c:X2_c, data = d)   # ÄNDRA HÄR
 summary(model_int)
 
 
-# ---- b) Kurvilinjäritet -----------------------------------------------------
+# -----------------------------------------------------------------------------
+# 9b. Kurvilinjäritet
+# -----------------------------------------------------------------------------
 # Lägg till en kvadratisk term för att testa om sambandet böjer sig
+# (t.ex. omvänd U-form med optimum i mitten)
 
 model_quad <- lm(Y ~ X1 + I(X1^2), data = d)      # ÄNDRA HÄR
 summary(model_quad)
@@ -229,8 +220,11 @@ optimum <- -b1 / (2 * b2)
 cat("Estimerat optimum för X1:", round(optimum, 2), "\n")
 
 
-# ---- c) Hierarkisk modelljämförelse -----------------------------------------
-# Lägg till prediktorer i steg, testa ΔR²
+# -----------------------------------------------------------------------------
+# 9c. Hierarkisk modelljämförelse
+# -----------------------------------------------------------------------------
+# Lägg till prediktorer i steg och testa ΔR²
+# Typ: Steg 1 = kontrollvariabler, Steg 2 = teoretiska prediktorer
 
 model_steg1 <- lm(Y ~ kontrollvariabel, data = d)             # ÄNDRA HÄR
 model_steg2 <- lm(Y ~ kontrollvariabel + X1 + X2, data = d)   # ÄNDRA HÄR
@@ -245,36 +239,54 @@ summary(model_steg2)$r.squared
 summary(model_steg2)$r.squared - summary(model_steg1)$r.squared
 
 
-# ---- d) Dummykodning av kategorisk prediktor --------------------------------
-# Gör R till att behandla en variabel som kategorisk
+# -----------------------------------------------------------------------------
+# 9d. Dummykodning av kategorisk prediktor
+# -----------------------------------------------------------------------------
+# Gör R till att behandla en variabel som kategorisk.
+# R dummykodar automatiskt i regressionen när variabeln är en factor.
 
-# Gör variabeln till factor (R dummykodar automatiskt i regressionen)
 d$min_kategorisk <- factor(d$min_kategorisk)             # ÄNDRA HÄR
 
-# Nu kan du använda den i en regression:
 model_dummy <- lm(Y ~ X1 + min_kategorisk, data = d)     # ÄNDRA HÄR
 summary(model_dummy)
 
-# Kolla vilken kategori som är referens
+# Kolla vilken kategori som är referens (den som inte visas i output)
 levels(d$min_kategorisk)
 
 
-# -----------------------------------------------------------------------------
-# 13. Exportera figur för PowerPoint
-# -----------------------------------------------------------------------------
+# =============================================================================
+# EXTRA HJÄLPFUNKTIONER (kör vid behov)
+# =============================================================================
 
+# -----------------------------------------------------------------------------
+# Deskriptiv statistik
+# -----------------------------------------------------------------------------
+# M, SD, min, max m.m. Bra att ha till din APA-rapport.
+# ÄNDRA HÄR: byt ut variabelnamnen mot dina egna
+
+psych::describe(d[, c("Y", "X1", "X2", "X3")])
+
+
+# -----------------------------------------------------------------------------
+# Bivariat korrelationstabell
+# -----------------------------------------------------------------------------
+# Hur hänger variablerna ihop parvis? Bra komplement till regressionen.
+# ÄNDRA HÄR: byt ut variabelnamnen mot dina egna
+
+cor(d[, c("Y", "X1", "X2", "X3")], use = "complete.obs")
+
+# Om du även vill ha p-värden för korrelationerna:
+psych::corr.test(d[, c("Y", "X1", "X2", "X3")])
+
+
+# -----------------------------------------------------------------------------
+# Exportera figur för PowerPoint
+# -----------------------------------------------------------------------------
 # Spara senaste figuren som PNG
+
 ggsave("min_figur.png", width = 8, height = 5, dpi = 300)
 
 
 # =============================================================================
-# KLART! Du har nu:
-#   - Deskriptiv statistik
-#   - Bivariat korrelationstabell
-#   - Enkel regression + scatter
-#   - Multipel regression
-#   - Standardiserade betas
-#   - VIF-check
-#   - Forest plot
-#   - (valfri) fördjupning
+# KLART!
 # =============================================================================
