@@ -16,12 +16,18 @@
 # -----------------------------------------------------------------------------
 
 # Rensa arbetsmiljön (valfritt men ger en ren start)
-rm(list = ls()); graphics.off(); cat("\014")
+# ta bort # framför raden för att aktivera den
+# rm(list = ls()); graphics.off(); cat("\014")
 
-# Ladda paket (installera först om du inte har dem: install.packages("namn"))
+# Kolla vilka paket som behövs och installera dem du saknar
+nodvandiga_paket <- c("tidyverse", "broom", "psych", "car")
+saknade <- nodvandiga_paket[!nodvandiga_paket %in% installed.packages()[, "Package"]]
+if (length(saknade) > 0) install.packages(saknade)
+
+# Ladda paket
 library(tidyverse)      # datahantering och ggplot
-library(broom)          # strukturerad output från modeller
-library(modelsummary)   # APA-snygga regressionstabeller
+library(broom)          # strukturerad output från modeller (tidy, glance)
+library(psych)          # deskriptiv statistik
 library(car)            # för vif()
 
 # Färgpalett (FHS)
@@ -41,7 +47,8 @@ getwd()
 
 # Om datasettet ligger någon annanstans, ändra arbetsmapp:
 # Session → Set Working Directory → To Source File Location
-# eller: setwd("/sökväg/till/din/mapp")
+# eller:
+# setwd("/sökväg/till/din/mapp")
 
 # Lista filer i arbetsmappen (hittar du din .csv-fil här?)
 list.files()
@@ -52,7 +59,7 @@ d <- read.csv("Mission command_data.csv")
 # Titta på datan
 dim(d)               # antal rader och kolumner
 names(d)             # alla variabelnamn
-View(d)              # öppnar datan i RStudio (valfritt)
+View(d)              # öppnar datan för inspektion
 
 
 # -----------------------------------------------------------------------------
@@ -62,7 +69,7 @@ View(d)              # öppnar datan i RStudio (valfritt)
 # Datasetten har ofta items med liknande prefix, t.ex. MC_01, MC_02 ...
 # Det är lätt att hitta alla items som börjar med ett visst prefix:
 
-# ÄNDRA HÄR: byt "MC_" mot prefixet för din skala
+# ÄNDRA HÄR: byt "MC_" mot prefixet för den skala du vill skapa index för
 mina_items <- grep("^MC_", names(d), value = TRUE)
 mina_items
 
@@ -86,7 +93,29 @@ summary(d$mission_command)
 
 
 # -----------------------------------------------------------------------------
-# 5. Enkel regression
+# 5. Deskriptiv statistik
+# -----------------------------------------------------------------------------
+# Medelvärde, SD, min, max m.m. för variablerna i din analys.
+# Dessa värden behöver du när du skriver din APA-rapport.
+
+# ÄNDRA HÄR: byt ut variabelnamnen mot dina egna
+psych::describe(d[, c("Y", "X1", "X2", "X3")])
+
+
+# -----------------------------------------------------------------------------
+# 6. Bivariat korrelationstabell
+# -----------------------------------------------------------------------------
+# Hur hänger variablerna ihop parvis? Bra att titta på innan regression.
+
+# ÄNDRA HÄR: byt ut variabelnamnen mot dina egna
+cor(d[, c("Y", "X1", "X2", "X3")], use = "complete.obs")
+
+# Om du även vill ha p-värden för korrelationerna:
+psych::corr.test(d[, c("Y", "X1", "X2", "X3")])
+
+
+# -----------------------------------------------------------------------------
+# 7. Enkel regression
 # -----------------------------------------------------------------------------
 # ÄNDRA HÄR: byt Y och X mot dina variabler
 
@@ -104,19 +133,19 @@ ggplot(d, aes(x = X, y = Y)) +                    # ÄNDRA HÄR
 
 
 # -----------------------------------------------------------------------------
-# 6. Multipel regression
+# 8. Multipel regression
 # -----------------------------------------------------------------------------
 # ÄNDRA HÄR: byt Y och prediktorerna mot dina variabler
 
 model_multipel <- lm(Y ~ X1 + X2 + X3, data = d)
 summary(model_multipel)
 
-# Strukturerad output (broom)
+# Strukturerad output (broom) — kan vara lättare att läsa
 tidy(model_multipel, conf.int = TRUE)
 
 
 # -----------------------------------------------------------------------------
-# 7. Standardiserade koefficienter (β)
+# 9. Standardiserade koefficienter (β)
 # -----------------------------------------------------------------------------
 # För att jämföra prediktorers relativa vikt, standardisera alla variabler
 
@@ -132,7 +161,7 @@ round(coef(model_std)[-1], 3)   # standardiserade betas
 
 
 # -----------------------------------------------------------------------------
-# 8. VIF-check (multikollinearitet)
+# 10. VIF-check (multikollinearitet)
 # -----------------------------------------------------------------------------
 # VIF < 5 = inget problem
 # VIF 5-10 = kan vara problematiskt
@@ -142,21 +171,7 @@ vif(model_multipel)
 
 
 # -----------------------------------------------------------------------------
-# 9. APA-korrekt regressionstabell
-# -----------------------------------------------------------------------------
-# modelsummary ger en snygg HTML-tabell du kan klistra in i PowerPoint
-
-modelsummary(
-  list("Enkel modell" = model_enkel,
-       "Multipel modell" = model_multipel),
-  stars = TRUE,                                  # *, **, ***
-  statistic = "({std.error})",
-  gof_map = c("nobs", "r.squared", "adj.r.squared", "F")
-)
-
-
-# -----------------------------------------------------------------------------
-# 10. Visualisering: forest plot av standardiserade betas
+# 11. Visualisering: forest plot av standardiserade betas
 # -----------------------------------------------------------------------------
 
 # Hämta koefficienter med konfidensintervall
@@ -186,7 +201,7 @@ ggplot(forest_df, aes(x = Beta, y = reorder(Prediktor, Beta),
 
 
 # -----------------------------------------------------------------------------
-# 11. Fördjupning — välj en (eller flera) som passar ditt dataset
+# 12. Fördjupning — välj en (eller flera) som passar ditt dataset
 # -----------------------------------------------------------------------------
 
 # ---- a) Moderering / interaktion --------------------------------------------
@@ -245,7 +260,7 @@ levels(d$min_kategorisk)
 
 
 # -----------------------------------------------------------------------------
-# 12. Exportera figur för PowerPoint
+# 13. Exportera figur för PowerPoint
 # -----------------------------------------------------------------------------
 
 # Spara senaste figuren som PNG
@@ -254,11 +269,12 @@ ggsave("min_figur.png", width = 8, height = 5, dpi = 300)
 
 # =============================================================================
 # KLART! Du har nu:
-#   - Enkel regression
+#   - Deskriptiv statistik
+#   - Bivariat korrelationstabell
+#   - Enkel regression + scatter
 #   - Multipel regression
 #   - Standardiserade betas
 #   - VIF-check
-#   - APA-tabell
-#   - Visualisering
+#   - Forest plot
 #   - (valfri) fördjupning
 # =============================================================================
