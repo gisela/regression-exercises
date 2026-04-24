@@ -3,8 +3,9 @@
 # =============================================================================
 #
 # Så här använder du skriptet:
-#   1. Lägg ditt valda dataset (.csv) i din working directory
-#   2. Öppna det här skriptet i RStudio
+#   1. Öppna det här skriptet i RStudio
+#   2. Läs in ditt dataset (t.ex. med File > Import dataset; 
+#      för enkelhetens skull så du slipper ändra i skriptet sen, döp den data frame du läser in data i till "d")
 #   3. Kör ett steg i taget, modifiera variabelnamn där det behövs
 #   4. Där det står ÄNDRA HÄR behöver du anpassa till ditt dataset
 #
@@ -24,10 +25,10 @@
 # -----------------------------------------------------------------------------
 
 # Rensa arbetsmiljön (valfritt men ger en ren start)
-# ta bort # framför raden för att aktivera den
+# ta bort # framför raden för att aktivera den/göra körbar
 # rm(list = ls()); graphics.off(); cat("\014")
 
-# Kolla vilka paket som behövs och installera dem du saknar
+# Kolla vilka extra paket som behövs och installera dem du saknar
 nodvandiga_paket <- c("tidyverse", "broom", "psych", "car")
 saknade <- nodvandiga_paket[!nodvandiga_paket %in% installed.packages()[, "Package"]]
 if (length(saknade) > 0) install.packages(saknade)
@@ -50,10 +51,15 @@ fhs_accent  <- "#9f4494"
 # 2. Ladda in data och inspektera
 # -----------------------------------------------------------------------------
 
+# Läs in ditt dataset (t.ex. med File > Import dataset; 
+#      för enkelhetens skull så du slipper ändra i skriptet sen, döp den data frame du läser in data i till "d")
+#  
+
+# Du kan annars lägga ditt dataset i ditt working directory
 # Kolla vilken mapp R arbetar i — här ska ditt dataset ligga
 getwd()
 
-# Om datasettet ligger någon annanstans, ändra arbetsmapp:
+# Om datasettet ligger någon annanstans, så kan du ändra arbetsmapp (var R tittar och sparar filer):
 # Session → Set Working Directory → To Source File Location
 # eller:
 # setwd("/sökväg/till/din/mapp")
@@ -64,6 +70,8 @@ list.files()
 # Läs in data — ÄNDRA HÄR: byt filnamn till ditt valda dataset
 d <- read.csv("Mission command_data.csv")
 
+### CHECKPOINT: Vid denna punkt i skriptet ska du på något sätt ha läst in en csv-fil till en data frame som heter "d"
+
 # Titta på datan
 dim(d)               # antal rader och kolumner
 names(d)             # alla variabelnamn
@@ -73,15 +81,15 @@ View(d)              # öppnar datan för inspektion
 # -----------------------------------------------------------------------------
 # 3. Hitta dina variabler (och ev. skapa index från items)
 # -----------------------------------------------------------------------------
-# Datasetten har ofta items med liknande prefix, t.ex. MC_01, MC_02 ...
 # Det är lätt att hitta alla items som börjar med ett visst prefix:
 
 # ÄNDRA HÄR: byt "MC_" mot prefixet för den skala du vill skapa index för
+# Hatten i början: ^MC_ betyder att den ska hämta variabelnamn som BÖRJAR med MC_ alltså viktigt att du behåller hatten
 mina_items <- grep("^MC_", names(d), value = TRUE)
 mina_items
 
 # Skapa index som medelvärde över items (hoppa över om ditt dataset redan
-# har färdiga index, t.ex. kolumnen collective_efficacy)
+# har färdiga index, kanske som du skapat tidigare
 d$mission_command <- rowMeans(d[, mina_items], na.rm = TRUE)
 
 # Upprepa för dina andra skalor — ÄNDRA HÄR för varje skala
@@ -98,10 +106,11 @@ d$mission_command <- rowMeans(d[, mina_items], na.rm = TRUE)
 # -----------------------------------------------------------------------------
 # ÄNDRA HÄR: byt Y och X mot dina variabler
 
-model_enkel <- lm(Y ~ X, data = d)
-summary(model_enkel)
+modell_enkel <- lm(Y ~ X, data = d)
+summary(modell_enkel)
 
-# Visualisera sambandet
+# Visualisera sambandet med scatterplot och regressionslinje
+# alpha = 0.5 gör punkterna halvgenomskinliga (bra när många punkter överlappar)
 ggplot(d, aes(x = X, y = Y)) +                    # ÄNDRA HÄR
   geom_point(alpha = 0.5, color = fhs_primary) +
   geom_smooth(method = "lm", se = TRUE, color = fhs_accent) +
@@ -118,13 +127,14 @@ ggplot(d, aes(x = X, y = Y)) +                    # ÄNDRA HÄR
 # -----------------------------------------------------------------------------
 # 5. Kör multipel regression
 # -----------------------------------------------------------------------------
+
 # ÄNDRA HÄR: byt Y och prediktorerna mot dina variabler
 
-model_multipel <- lm(Y ~ X1 + X2 + X3, data = d)
-summary(model_multipel)
+modell_multipel <- lm(Y ~ X1 + X2 + X3, data = d)
+summary(modell_multipel)
 
 # Strukturerad output med konfidensintervall — kan vara lättare att läsa
-tidy(model_multipel, conf.int = TRUE)
+tidy(modell_multipel, conf.int = TRUE)
 
 
 # -----------------------------------------------------------------------------
@@ -132,27 +142,42 @@ tidy(model_multipel, conf.int = TRUE)
 # -----------------------------------------------------------------------------
 # För att jämföra prediktorers relativa vikt standardiserar vi (z-transformerar)
 # alla variabler och kör samma regression igen. Koefficienterna blir nu
-# jämförbara även om variablerna mäts på olika skalor.
+# jämförbara även om variablerna mäts på olika skalor - du får Beta-värden
 
 d_z <- d
-# ÄNDRA HÄR: lägg till alla dina variabler i listan
+
+# ÄNDRA HÄR: lägg till alla dina variabler i listan (byt ut Y, X1 osv)
 vars_to_std <- c("Y", "X1", "X2", "X3")
 for (v in vars_to_std) {
   d_z[[v]] <- as.numeric(scale(d_z[[v]]))
 }
 
-model_std <- lm(Y ~ X1 + X2 + X3, data = d_z)     # ÄNDRA HÄR
-round(coef(model_std)[-1], 3)   # standardiserade betas
+modell_std <- lm(Y ~ X1 + X2 + X3, data = d_z)     # ÄNDRA HÄR
+
+round(coef(modell_std)[-1], 3)   # standardiserade betas
 
 
 # -----------------------------------------------------------------------------
 # 7. VIF-check (multikollinearitet)
 # -----------------------------------------------------------------------------
-# VIF < 5  = inget problem
-# VIF 5-10 = kan vara problematiskt
-# VIF > 10 = allvarlig multikollinearitet
+# VIF (Variance Inflation Factor) är ett vanligt förekommande mått
+# som du kommer se rapporteras i andra artiklar — men det är lite omdiskuterat.
+#
+# Vanliga tumregler:
+#   VIF ≈ 1   — prediktorn är i princip oberoende av de andra
+#   VIF < 2   — strängt riktmärke
+#   VIF < 5   — vanlig acceptansgräns (James et al., 2013)
+#
+#  Nyare metodlitteratur är kritisk till att använda VIF-tröskelvärden
+# för att avfärda multikollinearitetsproblem:
+#   - Kalnins & Praitis Hill (2024) — låga VIF kan samexistera med bias;
+#     bättre att titta på bivariata korrelationer (|r| > .30 som varning)
+#
+# Rapportera VIF, men titta också på din korrelationstabell
+# (se "Extra hjälpfunktioner" i slutet av skriptet).
 
-vif(model_multipel)
+vif(modell_multipel)
+
 
 
 # -----------------------------------------------------------------------------
@@ -161,9 +186,9 @@ vif(model_multipel)
 # Bra om du vill jämföra prediktorernas relativa vikt visuellt.
 
 # Hämta koefficienter med konfidensintervall
-betas <- coef(model_std)[-1]
-ses   <- summary(model_std)$coefficients[-1, "Std. Error"]
-pvals <- summary(model_std)$coefficients[-1, "Pr(>|t|)"]
+betas <- coef(modell_std)[-1]
+ses   <- summary(modell_std)$coefficients[-1, "Std. Error"]
+pvals <- summary(modell_std)$coefficients[-1, "Pr(>|t|)"]
 
 forest_df <- data.frame(
   Prediktor   = names(betas),
@@ -199,8 +224,8 @@ ggplot(forest_df, aes(x = Beta, y = reorder(Prediktor, Beta),
 d$X1_c <- d$X1 - mean(d$X1, na.rm = TRUE)         # ÄNDRA HÄR
 d$X2_c <- d$X2 - mean(d$X2, na.rm = TRUE)         # ÄNDRA HÄR
 
-model_int <- lm(Y ~ X1 + X2 + X3 + X1_c:X2_c, data = d)   # ÄNDRA HÄR
-summary(model_int)
+modell_int <- lm(Y ~ X1 + X2 + X3 + X1_c:X2_c, data = d)   # ÄNDRA HÄR
+summary(modell_int)
 
 
 # -----------------------------------------------------------------------------
@@ -209,49 +234,83 @@ summary(model_int)
 # Lägg till en kvadratisk term för att testa om sambandet böjer sig
 # (t.ex. omvänd U-form med optimum i mitten)
 
-model_quad <- lm(Y ~ X1 + I(X1^2), data = d)      # ÄNDRA HÄR
-summary(model_quad)
+modell_quad <- lm(Y ~ X1 + I(X1^2), data = d)      # ÄNDRA HÄR
+summary(modell_quad)
 
-# Hitta optimum om den kvadratiska termen är signifikant:
+# Hitta optimum ifall den kvadratiska termen är signifikant:
 # -b1 / (2*b2)
-b1 <- coef(model_quad)[2]
-b2 <- coef(model_quad)[3]
+b1 <- coef(modell_quad)[2]
+b2 <- coef(modell_quad)[3]
 optimum <- -b1 / (2 * b2)
 cat("Estimerat optimum för X1:", round(optimum, 2), "\n")
+
+# Du kan ta med din kvadrerade prediktor i den multipla regressionen ovanför också.
 
 
 # -----------------------------------------------------------------------------
 # 9c. Hierarkisk modelljämförelse
 # -----------------------------------------------------------------------------
-# Lägg till prediktorer i steg och testa ΔR²
+# Lägg till prediktorer steg för steg och testa ΔR²
 # Typ: Steg 1 = kontrollvariabler, Steg 2 = teoretiska prediktorer
 
-model_steg1 <- lm(Y ~ kontrollvariabel, data = d)             # ÄNDRA HÄR
-model_steg2 <- lm(Y ~ kontrollvariabel + X1 + X2, data = d)   # ÄNDRA HÄR
+modell_steg1 <- lm(Y ~ kontrollvariabel, data = d)             # ÄNDRA HÄR
+modell_steg2 <- lm(Y ~ kontrollvariabel + X1 + X2, data = d)   # ÄNDRA HÄR
 
 # Formellt F-test för ΔR²
-anova(model_steg1, model_steg2)
+anova(modell_steg1, modell_steg2)
 
 # R² för varje steg
-summary(model_steg1)$r.squared
-summary(model_steg2)$r.squared
+summary(modell_steg1)$r.squared
+summary(modell_steg2)$r.squared
 # ΔR²
-summary(model_steg2)$r.squared - summary(model_steg1)$r.squared
+summary(modell_steg2)$r.squared - summary(modell_steg1)$r.squared
 
 
 # -----------------------------------------------------------------------------
 # 9d. Dummykodning av kategorisk prediktor
 # -----------------------------------------------------------------------------
-# Gör R till att behandla en variabel som kategorisk.
-# R dummykodar automatiskt i regressionen när variabeln är en factor.
+# Vissa variabler är NUMERISKT kodade (1, 2, 3...) men det är inte alltid
+# självklart att de ska behandlas som kontinuerliga i en regression.
+#
+# Tre möjliga tillvägagångssätt:
+#   a) Numerisk (1, 2, 3) — antar både ORDNING och LIKA AVSTÅND i effekt
+#   b) Ordinal factor       — antar bara ordning
+#   c) Dummykodad factor    — antar bara olika kategorier (ingen ordning)
+#
+# Exempel: I ambush-datan är 'priority' kodad 1, 2, 3 och står för
+# tre strategier (skydd / avvägning / uppdrag). Det finns en logisk
+# ordning, men är "avvägning" verkligen exakt mittemellan de andra i effekt?
+# Testa båda och jämför.
+#
+# R dummykodar automatiskt om du gör variabeln till en factor:
+# - Med K kategorier skapas K-1 dummyvariabler internt
+# - Första nivån blir REFERENS (ingår i intercept)
+# - Övriga nivåer får var sin koefficient (skillnad mot referens)
 
-d$min_kategorisk <- factor(d$min_kategorisk)             # ÄNDRA HÄR
+# Som numerisk (standardkodningen)
+modell_numerisk <- lm(Y ~ X1 + priority, data = d)       # ÄNDRA HÄR
 
-model_dummy <- lm(Y ~ X1 + min_kategorisk, data = d)     # ÄNDRA HÄR
-summary(model_dummy)
+# Som dummykodad factor — R sköter dummykodningen automatiskt
+d$priority_cat <- factor(d$priority)                     # ÄNDRA HÄR
+modell_dummy <- lm(Y ~ X1 + priority_cat, data = d)      # ÄNDRA HÄR
 
-# Kolla vilken kategori som är referens (den som inte visas i output)
-levels(d$min_kategorisk)
+# Kolla vilken kategori som är referens (den första i listan)
+levels(d$priority_cat)
+
+# Jämför resultaten
+summary(modell_numerisk)
+summary(modell_dummy)
+
+# I outputen för dummykodad:
+#   (Intercept)     = Ŷ när priority_cat = referenskategorin
+#   priority_cat2   = skillnad mellan kategori 2 och referensen
+#   priority_cat3   = skillnad mellan kategori 3 och referensen
+#
+# Tolkning:
+# - Om dummy-koefficienterna ligger proportionellt (t.ex. 2 → +0.15, 3 → +0.30)
+#   → antagandet om lika avstånd i den numeriska modellen stämmer rimligt
+# - Om de är "udda" (t.ex. 2 → +0.05, 3 → +0.40)
+#   → numerisk kodning är missvisande — behåll dummykodningen
 
 
 # =============================================================================
@@ -275,7 +334,7 @@ psych::describe(d[, c("Y", "X1", "X2", "X3")])
 
 cor(d[, c("Y", "X1", "X2", "X3")], use = "complete.obs")
 
-# Om du även vill ha p-värden för korrelationerna:
+# För p-värden för korrelationerna:
 psych::corr.test(d[, c("Y", "X1", "X2", "X3")])
 
 
