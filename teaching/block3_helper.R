@@ -29,7 +29,7 @@
 # rm(list = ls()); graphics.off(); cat("\014")
 
 # Kolla vilka extra paket som behövs och installera dem du saknar
-nodvandiga_paket <- c("tidyverse", "broom", "psych", "car")
+nodvandiga_paket <- c("tidyverse", "broom", "psych", "car", "lm.beta")
 saknade <- nodvandiga_paket[!nodvandiga_paket %in% installed.packages()[, "Package"]]
 if (length(saknade) > 0) install.packages(saknade)
 
@@ -38,6 +38,7 @@ library(tidyverse)      # datahantering och ggplot
 library(broom)          # strukturerad output från modeller (tidy, glance)
 library(psych)          # deskriptiv statistik
 library(car)            # för vif()
+library(lm.beta)        # standardiserade betas direkt från lm-modell
 
 # Färgpalett (FHS)
 FHSpalette <- c("#00465a", "#296C7F", "#EAF0F2",
@@ -61,8 +62,10 @@ getwd()
 
 # Om datasettet ligger någon annanstans, så kan du ändra arbetsmapp (var R tittar och sparar filer):
 # Session → Set Working Directory → To Source File Location
-# eller:
-# setwd("/sökväg/till/din/mapp")
+# eller: 
+# setwd("/din/sökväg")
+
+setwd("/Users/gisela/Library/CloudStorage/OneDrive-Försvarshögskolan/Kurser/Kvantmetodik ForskU med Erik B/Regression")
 
 # Lista filer i arbetsmappen (hittar du din .csv-fil här?)
 list.files()
@@ -140,21 +143,14 @@ tidy(modell_multipel, conf.int = TRUE)
 # -----------------------------------------------------------------------------
 # 6. Standardiserade koefficienter (β)
 # -----------------------------------------------------------------------------
-# För att jämföra prediktorers relativa vikt standardiserar vi (z-transformerar)
-# alla variabler och kör samma regression igen. Koefficienterna blir nu
-# jämförbara även om variablerna mäts på olika skalor - du får Beta-värden
+# För att jämföra prediktorers relativa vikt använder vi standardiserade
+# koefficienter (β). Paketet lm.beta räknar ut dem direkt från din lm-modell
+# — du behöver inte standardisera variablerna först.
+#
+# OBS: lm.beta() tar en redan kör lm-modell som argument (inte formel + data).
 
-d_z <- d
-
-# ÄNDRA HÄR: lägg till alla dina variabler i listan (byt ut Y, X1 osv)
-vars_to_std <- c("Y", "X1", "X2", "X3")
-for (v in vars_to_std) {
-  d_z[[v]] <- as.numeric(scale(d_z[[v]]))
-}
-
-modell_std <- lm(Y ~ X1 + X2 + X3, data = d_z)     # ÄNDRA HÄR
-
-round(coef(modell_std)[-1], 3)   # standardiserade betas
+modell_std <- lm.beta(modell_multipel)
+summary(modell_std)   # visar både B (ostandardiserade) och β (standardiserade)
 
 
 # -----------------------------------------------------------------------------
@@ -185,16 +181,18 @@ vif(modell_multipel)
 # -----------------------------------------------------------------------------
 # Bra om du vill jämföra prediktorernas relativa vikt visuellt.
 
-# Hämta koefficienter med konfidensintervall
-betas <- coef(modell_std)[-1]
-ses   <- summary(modell_std)$coefficients[-1, "Std. Error"]
-pvals <- summary(modell_std)$coefficients[-1, "Pr(>|t|)"]
+# Hämta data från lm.beta-objektet
+coef_tab <- summary(modell_std)$coefficients[-1, ]   # hoppa över intercept
+betas   <- coef_tab[, "Standardized"]
+t_vals  <- coef_tab[, "t value"]
+pvals   <- coef_tab[, "Pr(>|t|)"]
+ses_std <- betas / t_vals   # standardiserad SE = β / t
 
 forest_df <- data.frame(
-  Prediktor   = names(betas),
+  Prediktor   = rownames(coef_tab),
   Beta        = betas,
-  CI_lo       = betas - 1.96 * ses,
-  CI_hi       = betas + 1.96 * ses,
+  CI_lo       = betas - 1.96 * ses_std,
+  CI_hi       = betas + 1.96 * ses_std,
   Signifikans = ifelse(pvals < 0.05, "Signifikant", "Ej sig.")
 )
 
